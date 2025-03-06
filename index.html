@@ -46,8 +46,13 @@
             font-size: 16px;
             color: #555;
         }
-        table {
+        .container {
             width: 100%;
+            max-width: 1200px; /* Set a max width for larger screens */
+            margin: 0 auto; /* Center the container */
+        }
+        table {
+            width: 90%;
             border-collapse: collapse;
             margin-bottom: 1.5rem;
             background-color: white;
@@ -60,19 +65,19 @@
             text-align: center;
             border-bottom: 1px solid #ddd;
             height: 30px; /* Fixed height for rows */
-            font-size: 14px; /* Font size for rows */
+            font-size: 12px; /* Font size for rows */
         }
         th {
-            background-color: #004890;
+            background-color: #003398;
             color: white;
-            font-size: 16px; /* Font size for headers */
+            font-size: 12px; /* Font size for headers */
         }
         tr:hover {
             background-color: #f1f1f1;
             transition: background-color 0.3s ease;
         }
         .button {
-            background-color: #0069d3;
+            background-color: #0075ea;
             color: white;
             padding: 10px 20px;
             border: none;
@@ -82,7 +87,7 @@
             font-size: 14px;
         }
         .button:hover {
-            background-color: #000a15;
+            background-color: #000000;
             transform: scale(1.05);
         }
         .footer {
@@ -94,14 +99,14 @@
         .icon {
             cursor: pointer;
             font-size: 24px;
-            color: #4A90E2;
+            color: #cc0070;
             margin-top: 10px;
         }
         .header-logo {
+            width: 80px; /* Adjust size for the logo */
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 100px; /* Adjust as needed */
         }
         .collapsible {
             cursor: pointer;
@@ -111,7 +116,7 @@
             text-align: left;
             outline: none;
             font-size: 15px;
-            background-color: #900404;
+            background-color: #cc0077;
             color: white;
             border: 2px solid #ffffff;
             margin-bottom: 10px;
@@ -124,36 +129,77 @@
             padding: 0 18px;
             display: none; /* Closed by default */
             overflow: hidden;
-            background-color: #f9f9f9;
+            background-color: #f4f4f4;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; /* Position above the tooltip */
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
         }
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-center p-4 relative">
-    <img src="https://i.imgur.com/9mOm7gP.png" alt="Physique 57 Logo" class="header-logo">
-    <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-3xl fade-in">
-        <h1 class="text-2xl font-bold mb-4 text-center">Upload and Process ZIP File</h1>
-        <div class="drag-drop-area" id="drag-drop-area">
-            <p>Drag and drop your ZIP file here or click to upload</p>
-        </div>
-        <input type="file" id="file-upload" accept=".zip" class="hidden">
-        <div id="loader" class="hidden mb-4">
-            <div class="flex items-center">
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%" id="loader-bar"></div>
-                </div>
-                <span class="ml-2 text-sm font-medium text-gray-700" id="loader-percentage">0%</span>
+    <div class="container">
+        <img src="https://i.imgur.com/9mOm7gP.png" alt="Physique 57 Logo" class="header-logo">
+        <div class="bg-white shadow-md rounded-lg p-6 w-full fade-in">
+            <h1 class="text-3xl font-bold mb-4 text-center text-blue-600">Upload and Process ZIP File</h1>
+            <div class="drag-drop-area" id="drag-drop-area">
+                <p>Drag and drop your ZIP file here or click to upload</p>
             </div>
+            <input type="file" id="file-upload" accept=".zip" class="hidden">
+            <div id="loader" class="hidden mb-4">
+                <div class="flex items-center">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%" id="loader-bar"></div>
+                    </div>
+                    <span class="ml-2 text-sm font-medium text-gray-700" id="loader-percentage">0%</span>
+                </div>
+            </div>
+            <div id="table-container" class="hidden overflow-x-auto">
+                <!-- Collapsible content will be inserted here -->
+            </div>
+            <div class="mt-4 flex justify-center space-x-2">
+                <button class="button tooltip" onclick="downloadCSV()">
+                    Download as CSV
+                    <span class="tooltiptext">Download data in CSV format</span>
+                </button>
+                <button class="button tooltip" onclick="downloadPDF()">
+                    Download as PDF
+                    <span class="tooltiptext">Download data in PDF format</span>
+                </button>
+                <button class="button tooltip" onclick="downloadImage()">
+                    Download as Image
+                    <span class="tooltiptext">Download table as image</span>
+                </button>
+                <button class="button tooltip" onclick="downloadConsolidatedCSV()">
+                    Download Consolidated Data
+                    <span class="tooltiptext">Download consolidated data in CSV format</span>
+                </button>
+            </div>
+            <i class="fas fa-upload icon tooltip" id="upload-icon" style="display: none;" onclick="toggleUpload()">
+                <span class="tooltiptext">Toggle upload area</span>
+            </i>
         </div>
-        <div id="table-container" class="hidden overflow-x-auto">
-            <!-- Collapsible content will be inserted here -->
-        </div>
-        <div class="mt-4 flex justify-center space-x-2">
-            <button class="button" onclick="downloadCSV()">Download as CSV</button>
-            <button class="button" onclick="downloadPDF()">Download as PDF</button>
-            <button class="button" onclick="downloadImage()">Download as Image</button>
-            <button class="button" onclick="downloadConsolidatedCSV()">Download Consolidated Data</button>
-        </div>
-        <i class="fas fa-upload icon" id="upload-icon" style="display: none;" onclick="toggleUpload()"></i>
     </div>
 
     <div class="footer">
