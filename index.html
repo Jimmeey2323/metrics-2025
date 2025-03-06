@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload and Data Processing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .drag-drop-area {
+            border: 2px dashed #0075ea;
+            padding: 60px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            background-color: #ffffff;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .drag-drop-area:hover {
+            background-color: #e0e0e0;
+            transform: scale(1.02);
+        }
+        .drag-drop-area p {
+            font-size: 16px;
+            color: #555;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            background-color: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            height: 30px; /* Fixed height for rows */
+            font-size: 14px; /* Font size for rows */
+        }
+        th {
+            background-color: #0075ea;
+            color: white;
+            font-size: 16px; /* Font size for headers */
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+            transition: background-color 0.3s ease;
+        }
+        .button {
+            background-color: #0075ea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            font-size: 14px;
+        }
+        .button:hover {
+            background-color: #005bb5;
+            transform: scale(1.05);
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
+        .icon {
+            cursor: pointer;
+            font-size: 24px;
+            color: #4A90E2;
+            margin-top: 10px;
+        }
+        .header-logo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 100px; /* Adjust as needed */
+        }
+        .collapsible {
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            border-radius: 10px;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+            background-color: #0075ea;
+            color: white;
+            border: 2px solid #ffffff;
+            margin-bottom: 10px;
+            transition: background-color 0.3s ease;
+        }
+        .collapsible:hover {
+            background-color: #005bb5;
+        }
+        .content {
+            padding: 0 18px;
+            display: none; /* Closed by default */
+            overflow: hidden;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center p-4 relative">
+    <img src="https://i.imgur.com/9mOm7gP.png" alt="Physique 57 Logo" class="header-logo">
+    <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-3xl fade-in">
+        <h1 class="text-2xl font-bold mb-4 text-center">Upload and Process ZIP File</h1>
+        <div class="drag-drop-area" id="drag-drop-area">
+            <p>Drag and drop your ZIP file here or click to upload</p>
+        </div>
+        <input type="file" id="file-upload" accept=".zip" class="hidden">
+        <div id="loader" class="hidden mb-4">
+            <div class="flex items-center">
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%" id="loader-bar"></div>
+                </div>
+                <span class="ml-2 text-sm font-medium text-gray-700" id="loader-percentage">0%</span>
+            </div>
+        </div>
+        <div id="table-container" class="hidden overflow-x-auto">
+            <!-- Collapsible content will be inserted here -->
+        </div>
+        <div class="mt-4 flex justify-center space-x-2">
+            <button class="button" onclick="downloadCSV()">Download as CSV</button>
+            <button class="button" onclick="downloadPDF()">Download as PDF</button>
+            <button class="button" onclick="downloadImage()">Download as Image</button>
+            <button class="button" onclick="downloadConsolidatedCSV()">Download Consolidated Data</button>
+        </div>
+        <i class="fas fa-upload icon" id="upload-icon" style="display: none;" onclick="toggleUpload()"></i>
+    </div>
+
+    <div class="footer">
+        <p>Created by Jimmeey Gondaa 2025. All rights reserved.</p>
+    </div>
+
+    <script>
+        document.getElementById('drag-drop-area').addEventListener('click', () => {
+            document.getElementById('file-upload').click();
+        });
+
+        document.getElementById('file-upload').addEventListener('change', handleFileUpload);
+        document.getElementById('drag-drop-area').addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect = 'copy';
+        });
+
+        document.getElementById('drag-drop-area').addEventListener('drop', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload({ target: { files } });
+            }
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.name.endsWith('.zip')) {
+                document.getElementById('loader').classList.remove('hidden');
+                processZipFile(file);
+            } else {
+                alert('Please upload a valid ZIP file.');
+            }
+        }
+
+        function processZipFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const zip = new JSZip();
+                zip.loadAsync(event.target.result).then(function(contents) {
+                    const csvFiles = [];
+                    const totalFiles = Object.keys(contents.files).length;
+                    let processedFiles = 0;
+
+                    Object.keys(contents.files).forEach(function(filename) {
+                        if (filename.endsWith('aggregate.csv')) {
+                            csvFiles.push(contents.files[filename].async('string').then(content => {
+                                processedFiles++;
+                                updateProgressBar(processedFiles, totalFiles);
+                                return content;
+                            }));
+                        } else {
+                            processedFiles++;
+                            updateProgressBar(processedFiles, totalFiles);
+                        }
+                    });
+
+                    Promise.all(csvFiles).then(function(csvContents) {
+                        const consolidatedData = consolidateCSVData(csvContents);
+                        displayTable(consolidatedData);
+                    });
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function updateProgressBar(processedFiles, totalFiles) {
+            const percentage = Math.round((processedFiles / totalFiles) * 100);
+            document.getElementById('loader-bar').style.width = percentage + '%';
+            document.getElementById('loader-percentage').textContent = percentage + '%';
+        }
+
+        function getMonthYear(dateString) {
+            const date = new Date(dateString);
+            const month = date.toLocaleString('default', { month: 'short' });
+            const year = date.getFullYear().toString().slice(-2);
+            return `${month}-${year}`;
+        }
+
+        function consolidateCSVData(csvContents) {
+            const consolidatedData = [];
+            const teacherData = {};
+
+            csvContents.forEach(content => {
+                const parsedData = Papa.parse(content, { header: true }).data;
+
+                parsedData.forEach(row => {
+                    const teacherName = `${row['Teacher First Name']} ${row['Teacher Last Name']}`;
+                    const location = row['Location'];
+                    const sessionName = row['Class name'];
+                    const checkedIn = parseInt(row['Checked in']) || 0;
+                    const monthYear = getMonthYear(row['Class date']);
+
+                    if (!teacherData[location]) teacherData[location] = {};
+                    if (!teacherData[location][monthYear]) teacherData[location][monthYear] = {};
+                    if (!teacherData[location][monthYear][teacherName]) {
+                        teacherData[location][monthYear][teacherName] = {
+                            teacherName,
+                            location,
+                            cycleSessions: 0,
+                            emptyCycleSessions: 0,
+                            nonEmptyCycleSessions: 0,
+                            cycleCustomers: 0,
+                            barreSessions: 0,
+                            emptyBarreSessions: 0,
+                            nonEmptyBarreSessions: 0,
+                            barreCustomers: 0,
+                            totalSessions: 0,
+                            totalEmptySessions: 0,
+                            totalNonEmptySessions: 0,
+                            totalCustomers: 0
+                        };
+                    }
+
+                    const teacher = teacherData[location][monthYear][teacherName];
+
+                    if (sessionName.toLowerCase().includes('powercycle')) {
+                        teacher.cycleSessions++;
+                        if (checkedIn === 0) {
+                            teacher.emptyCycleSessions++;
+                        } else {
+                            teacher.nonEmptyCycleSessions++;
+                            teacher.cycleCustomers += checkedIn;
+                        }
+                    } else if (!sessionName.toLowerCase().includes('powercycle')) {
+                        teacher.barreSessions++;
+                        if (checkedIn === 0) {
+                            teacher.emptyBarreSessions++;
+                        } else {
+                            teacher.nonEmptyBarreSessions++;
+                            teacher.barreCustomers += checkedIn;
+                        }
+                    }
+
+                    teacher.totalSessions = teacher.cycleSessions + teacher.barreSessions;
+                    teacher.totalEmptySessions = teacher.emptyCycleSessions + teacher.emptyBarreSessions;
+                    teacher.totalNonEmptySessions = teacher.nonEmptyCycleSessions + teacher.nonEmptyBarreSessions;
+                    teacher.totalCustomers = teacher.cycleCustomers + teacher.barreCustomers;
+                });
+            });
+
+            for (const location in teacherData) {
+                for (const monthYear in teacherData[location]) {
+                    for (const teacherName in teacherData[location][monthYear]) {
+                        const data = teacherData[location][monthYear][teacherName];
+                        const classAvgExcludingEmpty = data.totalNonEmptySessions > 0 ? (data.totalCustomers / data.totalNonEmptySessions).toFixed(2) : 'N/A';
+                        const classAvgIncludingEmpty = data.totalSessions > 0 ? (data.totalCustomers / data.totalSessions).toFixed(2) : 'N/A';
+                        consolidatedData.push({
+                            teacherName: data.teacherName,
+                            location: data.location,
+                            cycleSessions: data.cycleSessions,
+                            emptyCycleSessions: data.emptyCycleSessions,
+                            nonEmptyCycleSessions: data.nonEmptyCycleSessions,
+                            cycleCustomers: data.cycleCustomers,
+                            barreSessions: data.barreSessions,
+                            emptyBarreSessions: data.emptyBarreSessions,
+                            nonEmptyBarreSessions: data.nonEmptyBarreSessions,
+                            barreCustomers: data.barreCustomers,
+                            totalSessions: data.totalSessions,
+                            totalEmptySessions: data.totalEmptySessions,
+                            totalNonEmptySessions: data.totalNonEmptySessions,
+                            totalCustomers: data.totalCustomers,
+                            classAvgExcludingEmpty,
+                            classAvgIncludingEmpty,
+                            period: monthYear
+                        });
+                    }
+                }
+            }
+
+            return consolidatedData;
+        }
+
+        function displayTable(data) {
+            const tableContainer = document.getElementById('table-container');
+            tableContainer.innerHTML = '';
+
+            const groupedData = data.reduce((acc, row) => {
+                if (!acc[row.location]) acc[row.location] = [];
+                acc[row.location].push(row);
+                return acc;
+            }, {});
+
+            let overallTotals = {
+                cycleSessions: 0,
+                emptyCycleSessions: 0,
+                nonEmptyCycleSessions: 0,
+                cycleCustomers: 0,
+                barreSessions: 0,
+                emptyBarreSessions: 0,
+                nonEmptyBarreSessions: 0,
+                barreCustomers: 0,
+                totalSessions: 0,
+                totalEmptySessions: 0,
+                totalNonEmptySessions: 0,
+                totalCustomers: 0
+            };
+
+            for (const location in groupedData) {
+                const button = document.createElement('button');
+                button.className = 'collapsible';
+                button.textContent = location;
+                button.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    const content = this.nextElementSibling;
+                    content.style.display = content.style.display === 'block' ? 'none' : 'block';
+                });
+
+                const content = document.createElement('div');
+                content.className = 'content';
+                content.style.display = 'none'; // Closed by default
+
+                const tableWrapper = document.createElement('div');
+                tableWrapper.className = 'overflow-x-auto';
+
+                const table = document.createElement('table');
+                table.className = 'min-w-full bg-white border border-gray-200';
+
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                const headers = [
+                    { text: 'Teacher Name', icon: 'fas fa-user' },
+                    { text: 'Location', icon: 'fas fa-map-marker-alt' },
+                    { text: 'Cycle Sessions', icon: 'fas fa-sync' },
+                    { text: 'Empty Cycle Sessions', icon: 'fas fa-times-circle' },
+                    { text: 'Non-Empty Cycle Sessions', icon: 'fas fa-check-circle' },
+                    { text: 'Cycle Customers', icon: 'fas fa-users' },
+                    { text: 'Barre Sessions', icon: 'fas fa-balance-scale' },
+                    { text: 'Empty Barre Sessions', icon: 'fas fa-times-circle' },
+                    { text: 'Non-Empty Barre Sessions', icon: 'fas fa-check-circle' },
+                    { text: 'Barre Customers', icon: 'fas fa-users' },
+                    { text: 'Total Sessions', icon: 'fas fa-th-list' },
+                    { text: 'Total Empty Sessions', icon: 'fas fa-times-circle' },
+                    { text: 'Total Non-Empty Sessions', icon: 'fas fa-check-circle' },
+                    { text: 'Total Customers', icon: 'fas fa-users' },
+                    { text: 'Class Avg (Excluding Empty)', icon: 'fas fa-chart-line' },
+                    { text: 'Class Avg (Including Empty)', icon: 'fas fa-chart-line' },
+                    { text: 'Period', icon: 'fas fa-calendar' }
+                ];
+
+                headers.forEach(header => {
+                    const th = document.createElement('th');
+                    th.innerHTML = `<i class="${header.icon}"></i> ${header.text}`;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+                let locationTotals = {
+                    cycleSessions: 0,
+                    emptyCycleSessions: 0,
+                    nonEmptyCycleSessions: 0,
+                    cycleCustomers: 0,
+                    barreSessions: 0,
+                    emptyBarreSessions: 0,
+                    nonEmptyBarreSessions: 0,
+                    barreCustomers: 0,
+                    totalSessions: 0,
+                    totalEmptySessions: 0,
+                    totalNonEmptySessions: 0,
+                    totalCustomers: 0
+                };
+
+                groupedData[location].forEach(row => {
+                    const tr = document.createElement('tr');
+                    Object.values(row).forEach(cell => {
+                        const td = document.createElement('td');
+                        td.textContent = cell;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+
+                    // Update location totals
+                    locationTotals.cycleSessions += row.cycleSessions;
+                    locationTotals.emptyCycleSessions += row.emptyCycleSessions;
+                    locationTotals.nonEmptyCycleSessions += row.nonEmptyCycleSessions;
+                    locationTotals.cycleCustomers += row.cycleCustomers;
+                    locationTotals.barreSessions += row.barreSessions;
+                    locationTotals.emptyBarreSessions += row.emptyBarreSessions;
+                    locationTotals.nonEmptyBarreSessions += row.nonEmptyBarreSessions;
+                    locationTotals.barreCustomers += row.barreCustomers;
+                    locationTotals.totalSessions += row.totalSessions;
+                    locationTotals.totalEmptySessions += row.totalEmptySessions;
+                    locationTotals.totalNonEmptySessions += row.totalNonEmptySessions;
+                    locationTotals.totalCustomers += row.totalCustomers;
+                });
+
+                // Add totals row for location
+                const totalsRow = document.createElement('tr');
+                totalsRow.style.fontWeight = 'bold';
+                const locationClassAvgExcludingEmpty = locationTotals.totalNonEmptySessions > 0 ? (locationTotals.totalCustomers / locationTotals.totalNonEmptySessions).toFixed(2) : 'N/A';
+                const locationClassAvgIncludingEmpty = locationTotals.totalSessions > 0 ? (locationTotals.totalCustomers / locationTotals.totalSessions).toFixed(2) : 'N/A';
+                totalsRow.innerHTML = `<td>Totals</td><td>${location}</td><td>${locationTotals.cycleSessions}</td><td>${locationTotals.emptyCycleSessions}</td><td>${locationTotals.nonEmptyCycleSessions}</td><td>${locationTotals.cycleCustomers}</td><td>${locationTotals.barreSessions}</td><td>${locationTotals.emptyBarreSessions}</td><td>${locationTotals.nonEmptyBarreSessions}</td><td>${locationTotals.barreCustomers}</td><td>${locationTotals.totalSessions}</td><td>${locationTotals.totalEmptySessions}</td><td>${locationTotals.totalNonEmptySessions}</td><td>${locationTotals.totalCustomers}</td><td>${locationClassAvgExcludingEmpty}</td><td>${locationClassAvgIncludingEmpty}</td><td>-</td>`;
+                tbody.appendChild(totalsRow);
+
+                table.appendChild(tbody);
+                tableWrapper.appendChild(table);
+                content.appendChild(tableWrapper);
+                tableContainer.appendChild(button);
+                tableContainer.appendChild(content);
+
+                // Update overall totals
+                overallTotals.cycleSessions += locationTotals.cycleSessions;
+                overallTotals.emptyCycleSessions += locationTotals.emptyCycleSessions;
+                overallTotals.nonEmptyCycleSessions += locationTotals.nonEmptyCycleSessions;
+                overallTotals.cycleCustomers += locationTotals.cycleCustomers;
+                overallTotals.barreSessions += locationTotals.barreSessions;
+                overallTotals.emptyBarreSessions += locationTotals.emptyBarreSessions;
+                overallTotals.nonEmptyBarreSessions += locationTotals.nonEmptyBarreSessions;
+                overallTotals.barreCustomers += locationTotals.barreCustomers;
+                overallTotals.totalSessions += locationTotals.totalSessions;
+                overallTotals.totalEmptySessions += locationTotals.totalEmptySessions;
+                overallTotals.totalNonEmptySessions += locationTotals.totalNonEmptySessions;
+                overallTotals.totalCustomers += locationTotals.totalCustomers;
+            }
+
+            // Add grand totals row
+            const grandTotalsRow = document.createElement('tr');
+            grandTotalsRow.style.fontWeight = 'bold';
+            const overallClassAvgExcludingEmpty = overallTotals.totalNonEmptySessions > 0 ? (overallTotals.totalCustomers / overallTotals.totalNonEmptySessions).toFixed(2) : 'N/A';
+            const overallClassAvgIncludingEmpty = overallTotals.totalSessions > 0 ? (overallTotals.totalCustomers / overallTotals.totalSessions).toFixed(2) : 'N/A';
+            grandTotalsRow.innerHTML = `<td>Grand Total</td><td>-</td><td>${overallTotals.cycleSessions}</td><td>${overallTotals.emptyCycleSessions}</td><td>${overallTotals.nonEmptyCycleSessions}</td><td>${overallTotals.cycleCustomers}</td><td>${overallTotals.barreSessions}</td><td>${overallTotals.emptyBarreSessions}</td><td>${overallTotals.nonEmptyBarreSessions}</td><td>${overallTotals.barreCustomers}</td><td>${overallTotals.totalSessions}</td><td>${overallTotals.totalEmptySessions}</td><td>${overallTotals.totalNonEmptySessions}</td><td>${overallTotals.totalCustomers}</td><td>${overallClassAvgExcludingEmpty}</td><td>${overallClassAvgIncludingEmpty}</td><td>-</td>`;
+            const grandTotalsTable = document.createElement('table');
+            grandTotalsTable.className = 'min-w-full bg-white border border-gray-200 mt-4 rounded-lg shadow-md';
+            const grandTotalsTbody = document.createElement('tbody');
+            grandTotalsTbody.appendChild(grandTotalsRow);
+            grandTotalsTable.appendChild(grandTotalsTbody);
+
+            document.getElementById('loader').classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            document.getElementById('drag-drop-area').style.display = 'none';
+            document.getElementById('upload-icon').style.display = 'block';
+        }
+
+        function toggleUpload() {
+            const dragDropArea = document.getElementById('drag-drop-area');
+            const uploadIcon = document.getElementById('upload-icon');
+            if (dragDropArea.style.display === 'none') {
+                dragDropArea.style.display = 'block';
+                uploadIcon.style.display = 'none';
+            } else {
+                dragDropArea.style.display = 'none';
+                uploadIcon.style.display = 'block';
+            }
+        }
+
+        function downloadCSV() {
+            const table = document.querySelector('#table-container table');
+            let csvContent = '';
+            const rows = table.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td, th');
+                const rowData = Array.from(cols).map(col => col.textContent).join(',');
+                csvContent += rowData + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'table_data.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const table = document.querySelector('#table-container table');
+            doc.autoTable({ html: table });
+            doc.save('table_data.pdf');
+        }
+
+        function downloadImage() {
+            const tableContainer = document.getElementById('table-container');
+            html2canvas(tableContainer).then(canvas => {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = 'table_data.png';
+                a.click();
+            });
+        }
+
+        function downloadConsolidatedCSV() {
+            // Assuming consolidated data is stored in a variable called consolidatedData
+            let csvContent = 'Teacher Name,Location,Cycle Sessions,Empty Cycle Sessions,Non-Empty Cycle Sessions,Cycle Customers,Barre Sessions,Empty Barre Sessions,Non-Empty Barre Sessions,Barre Customers,Total Sessions,Total Empty Sessions,Total Non-Empty Sessions,Total Customers,Class Avg (Excluding Empty),Class Avg (Including Empty),Period\n';
+            
+            consolidatedData.forEach(row => {
+                csvContent += `${row.teacherName},${row.location},${row.cycleSessions},${row.emptyCycleSessions},${row.nonEmptyCycleSessions},${row.cycleCustomers},${row.barreSessions},${row.emptyBarreSessions},${row.nonEmptyBarreSessions},${row.barreCustomers},${row.totalSessions},${row.totalEmptySessions},${row.totalNonEmptySessions},${row.totalCustomers},${row.classAvgExcludingEmpty},${row.classAvgIncludingEmpty},${row.period}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'consolidated_data.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+    </script>
+</body>
+</html>
