@@ -3,224 +3,839 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload and Data Processing</title>
+    <title>Physique 57 Analytics Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
+        :root {
+            --primary-color: #1a237e;
+            --secondary-color: #283593;
+            --accent-color: #3f51b5;
+            --success-color: #00695c;
+            --warning-color: #ff6f00;
+            --error-color: #d32f2f;
+            --background-color: #ffffff;
+            --surface-color: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #000000;
+            --border-color: #000000;
+            --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 8px 16px -3px rgba(0, 0, 0, 0.25), 0 4px 8px -2px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f0f4f8;
+            font-family: 'Play', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #f1f5f9 75%, #e8eaf6 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
         }
+
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            border: 2px solid #000000;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+
         .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .drag-drop-area {
+            border: 3px dashed #000000;
+            padding: 80px 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            background: #ffffff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drag-drop-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(26, 35, 126, 0.15), transparent);
+            transition: left 0.6s;
+        }
+
+        .drag-drop-area:hover::before {
+            left: 100%;
+        }
+
+        .drag-drop-area:hover {
+            border-color: #1a237e;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(26, 35, 126, 0.25);
+        }
+
+        .drag-drop-area.drag-over {
+            border-color: #000000;
+            background: linear-gradient(135deg, rgba(26, 35, 126, 0.05) 0%, rgba(103, 58, 183, 0.05) 100%);
+        }
+
+        .btn-premium {
+            font-family: 'Play', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 25%, #3f51b5 50%, #5e35b1 75%, #673ab7 100%);
+            color: white;
+            padding: 12px 24px;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(26, 35, 126, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-premium::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn-premium:hover::after {
+            left: 100%;
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-premium:active {
+            transform: translateY(0);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid #000000;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(26, 35, 126, 0.2);
+            background: linear-gradient(135deg, #f8f9ff 0%, #f3e5f5 100%);
+        }
+
+        /* FIXED TABLE STYLES - COMPLETE ALIGNMENT SOLUTION */
+.data-table {
+    width: 100%;
+    min-width: 1300px;
+    border-collapse: collapse;
+    background: var(--surface-color);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+    padding: 20px 30px;
+    border: 2px solid #000000;
+    table-layout: fixed; /* Crucial for perfect alignment */
+}
+
+.data-table thead tr {
+    background: linear-gradient(135deg, #1a237e 0%, #283593 25%, #3f51b5 50%, #283593 75%, #1a237e 100%);
+}
+
+.data-table th {
+    font-family: 'Play', 'Inter', sans-serif;
+    color: white !important;
+    padding: 10px 4px; /* Reduced, consistent padding */
+    text-align: center;
+    font-weight: 600;
+    font-size: 10px; /* Smaller font for headers */
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    border: none;
+    background: transparent;
+    height: 35px;
+    line-height: 1.1;
+    white-space: normal; /* Allow wrapping */
+    overflow: visible;
+    text-overflow: clip;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    vertical-align: middle;
+    word-wrap: break-word;
+}
+
+.data-table td {
+    font-family: 'Play', 'Inter', sans-serif;
+    padding: 8px 4px; /* Match header padding */
+    border-bottom: 1px solid #000000;
+    font-size: 11px;
+    transition: all 0.2s ease;
+    height: 35px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    vertical-align: middle;
+    color: #000000;
+    font-weight: 500;
+}
+
+/* PRECISE COLUMN WIDTH DEFINITIONS - MATCHING HEADERS AND DATA */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+    width: 160px; /* Teacher name */
+    min-width: 160px;
+    max-width: 160px;
+    text-align: left;
+    padding-left: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+    width: 180px; /* Location - wider for long names */
+    min-width: 180px;
+    max-width: 180px;
+    text-align: left;
+    padding-left: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+    width: 70px; /* Period */
+    min-width: 70px;
+    max-width: 70px;
+}
+
+/* Numeric columns - compact widths for numbers */
+.data-table th:nth-child(4),  /* Cycle */
+.data-table td:nth-child(4),
+.data-table th:nth-child(5),  /* Empty Cycle */
+.data-table td:nth-child(5),
+.data-table th:nth-child(6),  /* Full Cycle */
+.data-table td:nth-child(6),
+.data-table th:nth-child(7),  /* Cycle Customers */
+.data-table td:nth-child(7),
+.data-table th:nth-child(8),  /* Barre */
+.data-table td:nth-child(8),
+.data-table th:nth-child(9),  /* Empty Barre */
+.data-table td:nth-child(9),
+.data-table th:nth-child(10), /* Full Barre */
+.data-table td:nth-child(10),
+.data-table th:nth-child(11), /* Barre Customers */
+.data-table td:nth-child(11),
+.data-table th:nth-child(12), /* Total Sessions */
+.data-table td:nth-child(12),
+.data-table th:nth-child(13), /* Empty Total */
+.data-table td:nth-child(13),
+.data-table th:nth-child(14), /* Full Total */
+.data-table td:nth-child(14),
+.data-table th:nth-child(15), /* All Customers */
+.data-table td:nth-child(15) {
+    width: 65px;
+    min-width: 65px;
+    max-width: 65px;
+}
+
+.data-table th:nth-child(16), /* Avg (Ex. Empty) */
+.data-table td:nth-child(16),
+.data-table th:nth-child(17) { /* Avg (Inc. Empty) */
+    width: 85px;
+    min-width: 85px;
+    max-width: 85px;
+}
+
+/* Header-specific fixes */
+.data-table th i {
+    color: white !important;
+    margin-right: 3px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    font-size: 9px;
+}
+
+/* Ensure all numeric columns are right-aligned for better readability */
+.data-table td:nth-child(n+4):nth-child(-n+15) {
+    text-align: center;
+    padding-right: 8px;
+    font-family: 'Play';
+    font-weight: 600;
+}
+
+.data-table th:nth-child(n+4):nth-child(-n+15) {
+    text-align: center;
+}
+
+/* Average columns center aligned */
+.data-table td:nth-child(16),
+.data-table td:nth-child(17) {
+    text-align: center;
+    font-family: 'Play';
+    font-weight: 600;
+}
+
+/* Remove any conflicting background colors that might affect alignment */
+.data-table td:first-child {
+    background: rgba(26, 35, 126, 0.05) !important;
+}
+
+/* Compact header text for better fit */
+.data-table th {
+    font-size: 9px;
+    line-height: 1.5;
+    padding: 8px 3px;
+}
+
+/* Wrap header text while preserving fixed column widths */
+.data-table thead th {
+    white-space: normal;           /* allow wrapping */
+    overflow-wrap: anywhere;       /* break long words if needed */
+    word-break: break-word;        /* ensure breaks in long tokens */
+    hyphens: auto;                 /* add hyphenation where supported */
+    height: auto;                  /* remove fixed height constraint */
+    min-height: 35px;              /* keep a comfortable minimum */
+}
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .tabs-container {
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            border: 2px solid #000000;
+            border-bottom: none;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 15px 25px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: #000000;
+            transition: all 0.3s ease;
+            border-right: 1px solid #e2e8f0;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .tab-button:last-child {
+            border-right: none;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #1a237e 0%, #3f51b5 100%);
+            color: white;
+        }
+
+        .tab-button:not(.active):hover {
+            background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
             from {
                 opacity: 0;
+                transform: translateY(10px);
             }
             to {
                 opacity: 1;
+                transform: translateY(0);
             }
         }
-        .drag-drop-area {
-            border: 2px dashed #0075ea;
-            padding: 60px;
-            text-align: center;
-            margin-bottom: 20px;
+
+        .collapsible-row {
             cursor: pointer;
-            background-color: #ffffff;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
-        .drag-drop-area:hover {
-            background-color: #e0e0e0;
-            transform: scale(1.02);
+
+        .collapsible-row:hover {
+            opacity: 0.9;
         }
-        .drag-drop-area p {
-            font-size: 16px;
-            color: #555;
+
+        .collapsible-row td[colspan]::before {
+            content: '\f078';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-right: 8px;
+            transition: transform 0.3s ease;
         }
-        .container {
-            width: 100%;
-            max-width: 1200px; /* Set a max width for larger screens */
-            margin: 0 auto; /* Center the container */
+
+        .collapsible-row.collapsed td[colspan]::before {
+            transform: rotate(-90deg);
         }
-        table {
-            width: 90%;
-            border-collapse: collapse;
-            margin-bottom: 1.5rem;
-            background-color: white;
-            border-radius: 15px;
+
+        .collapsible-content {
+            transition: all 0.3s ease;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        th, td {
-            padding: 8px;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-            height: 30px; /* Fixed height for rows */
-            font-size: 12px; /* Font size for rows */
+
+        .collapsible-content.collapsed {
+            display: none;
+        } 
+
+        /* Underperforming Trainer Row Styling */
+        .data-table tbody tr.underperforming {
+            background: #fef2f2 !important;
+            border-left: 4px solid #dc2626;
         }
-        th {
-            background-color: #003398;
-            color: white;
-            font-size: 12px; /* Font size for headers */
+
+        .data-table tbody tr.underperforming td:first-child::before {
+            content: '\f071';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: #dc2626;
+            margin-right: 6px;
+            font-size: 10px;
         }
-        tr:hover {
-            background-color: #f1f1f1;
-            transition: background-color 0.3s ease;
+
+        .data-table tbody tr.underperforming:hover {
+            background: #fee2e2 !important;
+        }    
+
+        .elegant-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                0 1px 3px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow-x: auto;
+            overflow-y: visible;
         }
-        .button {
-            background-color: #0075ea;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-            font-size: 14px;
-        }
-        .button:hover {
-            background-color: #000000;
-            transform: scale(1.05);
-        }
-        .footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #777;
-        }
-        .icon {
-            cursor: pointer;
-            font-size: 24px;
-            color: #cc0070;
-            margin-top: 10px;
-        }
-        .header-logo {
-            width: 80px; /* Adjust size for the logo */
+
+        .elegant-card::before {
+            content: '';
             position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(26, 35, 126, 0.3), transparent);
+        }
+
+        .premium-header {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 25%, #3f51b5 50%, #5e35b1 75%, #673ab7 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+            overflow: hidden;
+            min-width: 1350px;
+        }
+
+        .premium-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .premium-header:hover::before {
+            left: 100%;
+        }
+
+        .premium-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        #table-container {
+            overflow-x: auto;
+            overflow-y: visible;
+            max-width: 100%;
+        }
+
+        #table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        #table-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        #table-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #1a237e 0%, #3f51b5 100%);
+            border-radius: 4px;
+        }
+
+        #table-container::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #0d47a1 0%, #283593 100%);
+        }
+
+        .toolbar {
+            background: var(--surface-color);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 2px solid #000000;
+        }
+
+        .search-box {
+            padding: 10px 16px;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            min-width: 250px;
+            color: #000000;
+            font-weight: 500;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #1a237e;
+            box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color) 0%, var(--success-color) 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .notification {
+            position: fixed;
             top: 20px;
             right: 20px;
-        }
-        .collapsible {
-            cursor: pointer;
-            padding: 10px;
-            width: 100%;
-            border-radius: 10px;
-            text-align: left;
-            outline: none;
-            font-size: 15px;
-            background-color: #cc0077;
+            padding: 16px 20px;
+            border-radius: 12px;
             color: white;
-            border: 2px solid #ffffff;
-            margin-bottom: 10px;
-            transition: background-color 0.3s ease;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .collapsible:hover {
-            background-color: #000000;
+
+        .notification.show {
+            transform: translateX(0);
         }
-        .content {
-            padding: 0 18px;
-            display: none; /* Closed by default */
-            overflow: hidden;
-            background-color: #f4f4f4;
+
+        .notification.success {
+            background: var(--success-color);
         }
-        .tooltip {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
+
+        .notification.error {
+            background: var(--error-color);
         }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 120px;
-            background-color: #555;
-            color: #fff;
+
+        .footer {
+            margin-top: 40px;
             text-align: center;
-            border-radius: 6px;
-            padding: 5px 0;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%; /* Position above the tooltip */
-            left: 50%;
-            margin-left: -60px;
-            opacity: 0;
-            transition: opacity 0.3s;
+            font-size: 14px;
+            color: #64748b;
+            padding: 20px;
         }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
+
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .action-buttons {
+                justify-content: center;
+            }
+
+            .search-box {
+                min-width: 100%;
+            }
+
+            .data-table {
+                font-size: 11px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 4px;
+            }
+        }
+
+        /* Totals and Grand Totals Rows Animated Borders */
+        .data-table tbody tr.totals-row,
+        .data-table tbody tr.grand-totals-row {
+            background: #f5f5f5 !important;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .data-table tbody tr.totals-row::after,
+        .data-table tbody tr.grand-totals-row::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid transparent;
+            border-radius: 0;
+            animation: borderSlide 3s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes borderSlide {
+            0% { border-color: #888; }
+            50% { border-color: #ccc; }
+            100% { border-color: #888; }
         }
     </style>
 </head>
-<body class="bg-gray-100 flex flex-col items-center justify-center p-4 relative">
-    <div class="container">
-        <img src="https://i.imgur.com/9mOm7gP.png" alt="Physique 57 Logo" class="header-logo">
-        <div class="bg-white shadow-md rounded-lg p-6 w-full fade-in">
-            <h1 class="text-3xl font-bold mb-4 text-center text-blue-600">Upload and Process ZIP File</h1>
-            <div class="drag-drop-area" id="drag-drop-area">
-                <p>Drag and drop your ZIP file here or click to upload</p>
+<body>
+
+    
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8 fade-in">
+                <h1 class="text-5xl font-bold text-gray-800 mb-2" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">Physique 57 Analytics</h1>
+                <p class="text-xl text-gray-600">Advanced Data Processing Dashboard</p>
             </div>
-            <input type="file" id="file-upload" accept=".zip" class="hidden">
-            <div id="loader" class="hidden mb-4">
-                <div class="flex items-center">
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 0%" id="loader-bar"></div>
+
+            <!-- Upload Section -->
+            <div class="glass-morphism p-8 mb-8 fade-in" id="upload-section">
+                <div class="drag-drop-area" id="drag-drop-area">
+                    <div class="mb-4">
+                        <i class="fas fa-cloud-upload-alt text-6xl text-blue-500 mb-4"></i>
                     </div>
-                    <span class="ml-2 text-sm font-medium text-gray-700" id="loader-percentage">0%</span>
+                    <h3 class="text-2xl font-semibold text-gray-700 mb-2">Upload ZIP File</h3>
+                    <p class="text-gray-500 mb-4">Drag and drop your ZIP file here or click to browse</p>
+                    <button class="btn-premium">
+                        <i class="fas fa-folder-open mr-2"></i>
+                        Choose File
+                    </button>
+                </div>
+                <input type="file" id="file-upload" accept=".zip" class="hidden">
+                
+                <!-- Progress Bar -->
+                <div id="loader" class="hidden mt-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Processing files...</span>
+                        <span class="text-sm font-medium text-gray-700" id="loader-percentage">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%" id="loader-bar"></div>
+                    </div>
                 </div>
             </div>
-            <div id="table-container" class="hidden overflow-x-auto">
-                <!-- Collapsible content will be inserted here -->
+
+            <!-- Data Section -->
+            <div id="data-section" class="hidden fade-in">
+                <!-- Stats Overview -->
+                <div class="stats-grid mb-8" id="stats-overview">
+                    <!-- Stats cards will be populated here -->
+                </div>
+
+                <!-- Grouping Controls -->
+                <div class="glass-morphism p-6 mb-6">
+                    <div class="flex items-center justify-between flex-wrap gap-4">
+                        <div class="flex items-center gap-4">
+                            <label class="font-semibold text-gray-800">Group By:</label>
+                            <select id="grouping-select" class="search-box" onchange="changeGrouping()">
+                                <option value="location" selected>Location → Month (Tabs)</option>
+                                <option value="month">Month → Location</option>
+                                <option value="trainer">Trainer View</option>
+                            </select>
+                            <button class="btn-premium btn-sm" onclick="toggleAllTotals()">
+                                <i class="fas fa-compress-alt mr-2"></i>
+                                <span id="toggle-totals-text">Collapse All</span>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="text" 
+                                   id="search-input" 
+                                   class="search-box" 
+                                   placeholder="Search teachers, locations..."
+                                   onkeyup="filterTable()"
+                                   style="min-width: 200px;">
+                            <button class="btn-premium btn-sm" onclick="clearFilters()">
+                                <i class="fas fa-times mr-1"></i>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toolbar -->
+                <div class="toolbar">
+                    <div class="flex items-center gap-4">
+                        <div class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-chart-bar mr-2"></i>
+                            Analytics Dashboard
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="btn-premium" onclick="copyToClipboard()" title="Copy to Clipboard">
+                            <i class="fas fa-copy mr-2"></i>
+                            Copy
+                        </button>
+                        <button class="btn-premium" onclick="downloadCSV()" title="Export as CSV">
+                            <i class="fas fa-file-csv mr-2"></i>
+                            CSV
+                        </button>
+                        <button class="btn-premium" onclick="downloadPDF()" title="Export as PDF">
+                            <i class="fas fa-file-pdf mr-2"></i>
+                            PDF
+                        </button>
+                        <button class="btn-premium" onclick="downloadImage()" title="Export as PNG">
+                            <i class="fas fa-image mr-2"></i>
+                            PNG
+                        </button>
+                        <button class="btn-premium" onclick="toggleUpload()" title="Upload New File">
+                            <i class="fas fa-upload mr-2"></i>
+                            New Upload
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="glass-morphism p-6">
+                    <div class="overflow-x-auto max-w-full" id="table-container">
+                        <!-- Table will be populated here -->
+                    </div>
+                </div>
             </div>
-            <div class="mt-4 flex justify-center space-x-2">
-                <button class="button tooltip" onclick="downloadCSV()">
-                    Download as CSV
-                    <span class="tooltiptext">Download data in CSV format</span>
-                </button>
-                <button class="button tooltip" onclick="downloadPDF()">
-                    Download as PDF
-                    <span class="tooltiptext">Download data in PDF format</span>
-                </button>
-                <button class="button tooltip" onclick="downloadImage()">
-                    Download as Image
-                    <span class="tooltiptext">Download table as image</span>
-                </button>
-                <button class="button tooltip" onclick="downloadConsolidatedCSV()">
-                    Download Consolidated Data
-                    <span class="tooltiptext">Download consolidated data in CSV format</span>
-                </button>
-            </div>
-            <i class="fas fa-upload icon tooltip" id="upload-icon" style="display: none;" onclick="toggleUpload()">
-                <span class="tooltiptext">Toggle upload area</span>
-            </i>
         </div>
     </div>
 
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
     <div class="footer">
-        <p>Created by Jimmeey Gondaa 2025. All rights reserved.</p>
+        <p>© 2025 Physique 57 Analytics Dashboard. Created by Jimmeey Gondaa. All rights reserved.</p>
     </div>
 
     <script>
+        let consolidatedData = [];
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
+        let originalTableData = [];
+
+        // Event Listeners
         document.getElementById('drag-drop-area').addEventListener('click', () => {
             document.getElementById('file-upload').click();
         });
 
         document.getElementById('file-upload').addEventListener('change', handleFileUpload);
+        
         document.getElementById('drag-drop-area').addEventListener('dragover', (event) => {
             event.preventDefault();
             event.stopPropagation();
             event.dataTransfer.dropEffect = 'copy';
+            event.currentTarget.classList.add('drag-over');
+        });
+
+        document.getElementById('drag-drop-area').addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.classList.remove('drag-over');
         });
 
         document.getElementById('drag-drop-area').addEventListener('drop', (event) => {
             event.preventDefault();
             event.stopPropagation();
+            event.currentTarget.classList.remove('drag-over');
             const files = event.dataTransfer.files;
             if (files.length > 0) {
                 handleFileUpload({ target: { files } });
@@ -231,10 +846,34 @@
             const file = event.target.files[0];
             if (file && file.name.endsWith('.zip')) {
                 document.getElementById('loader').classList.remove('hidden');
+                showNotification('Processing ZIP file...', 'success');
                 processZipFile(file);
             } else {
-                alert('Please upload a valid ZIP file.');
+                showNotification('Please upload a valid ZIP file.', 'error');
             }
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
+                ${message}
+            `;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(notification);
+                }, 300);
+            }, 3000);
         }
 
         function processZipFile(file) {
@@ -260,8 +899,11 @@
                     });
 
                     Promise.all(csvFiles).then(function(csvContents) {
-                        const consolidatedData = consolidateCSVData(csvContents);
+                        consolidatedData = consolidateCSVData(csvContents);
+                        originalTableData = [...consolidatedData];
                         displayTable(consolidatedData);
+                        showStats(consolidatedData);
+                        showNotification('Data processed successfully!', 'success');
                     });
                 });
             };
@@ -375,17 +1017,551 @@
             return consolidatedData;
         }
 
+        let currentGrouping = 'location';
+        let collapsedSections = new Set();
+
         function displayTable(data) {
+            const groupingType = document.getElementById('grouping-select').value;
+            currentGrouping = groupingType;
+            
+            if (groupingType === 'location') {
+                displayLocationGrouped(data);
+            } else if (groupingType === 'month') {
+                displayMonthGrouped(data);
+            } else if (groupingType === 'trainer') {
+                displayTrainerView(data);
+            }
+
+            // Show data section and hide upload section
+            document.getElementById('loader').classList.add('hidden');
+            document.getElementById('data-section').classList.remove('hidden');
+            document.getElementById('upload-section').style.display = 'none';
+        }
+
+        function displayLocationGrouped(data) {
             const tableContainer = document.getElementById('table-container');
             tableContainer.innerHTML = '';
 
+            // Group data by location first, then by month
             const groupedData = data.reduce((acc, row) => {
-                if (!acc[row.location]) acc[row.location] = [];
-                acc[row.location].push(row);
+                const location = row.location || 'Unknown';
+                const period = row.period || 'Unknown';
+                if (!acc[location]) acc[location] = {};
+                if (!acc[location][period]) acc[location][period] = [];
+                acc[location][period].push(row);
                 return acc;
             }, {});
 
-            let overallTotals = {
+            // Create tabs container
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'tabs-container';
+
+            // Create tab buttons
+            const tabButtons = document.createElement('div');
+            tabButtons.className = 'tab-buttons';
+
+            const locations = Object.keys(groupedData).sort();
+            
+            locations.forEach((location, index) => {
+                const button = document.createElement('button');
+                button.className = `tab-button ${index === 0 ? 'active' : ''}`;
+                button.textContent = location;
+                button.onclick = () => switchTab(location, locations);
+                tabButtons.appendChild(button);
+            });
+
+            tabsContainer.appendChild(tabButtons);
+
+            // Create tab contents
+            locations.forEach((location, index) => {
+                const tabContent = document.createElement('div');
+                tabContent.className = `tab-content elegant-card ${index === 0 ? 'active' : ''}`;
+                tabContent.id = `tab-${location.replace(/\s+/g, '-')}`;
+
+                // Create header for this location
+                const header = document.createElement('div');
+                header.className = 'premium-header';
+                header.innerHTML = `
+                    <h3><i class="fas fa-map-marker-alt mr-3"></i>${location}</h3>
+                `;
+                tabContent.appendChild(header);
+
+                // Create table for this location
+                const table = createLocationTable(groupedData[location], location);
+                tabContent.appendChild(table);
+
+                tabsContainer.appendChild(tabContent);
+            });
+
+            tableContainer.appendChild(tabsContainer);
+        }
+
+        function displayMonthGrouped(data) {
+            const tableContainer = document.getElementById('table-container');
+            tableContainer.innerHTML = '';
+
+            // Create elegant card container
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'elegant-card';
+
+            // Create table
+            const table = createMonthGroupedTable(data);
+            cardContainer.appendChild(table);
+
+            tableContainer.appendChild(cardContainer);
+        }
+
+        function createLocationTable(locationData, locationName) {
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            table.id = 'main-data-table';
+
+            // Create header
+            const thead = createTableHeader();
+            table.appendChild(thead);
+
+            // Create body
+            const tbody = document.createElement('tbody');
+            let locationTotals = initializeTotals();
+
+            // Sort months chronologically
+            const sortedMonths = Object.keys(locationData).sort((a, b) => {
+                const [monthA, yearA] = a.split('-');
+                const [monthB, yearB] = b.split('-');
+                const dateA = new Date(`${monthA} 20${yearA}`);
+                const dateB = new Date(`${monthB} 20${yearB}`);
+                return dateA - dateB;
+            });
+
+            sortedMonths.forEach((month, monthIndex) => {
+                const sectionId = `${locationName}-${month}`;
+                
+                // Add month header row (collapsible)
+                const monthHeaderRow = document.createElement('tr');
+                monthHeaderRow.className = 'month-header collapsible-row';
+                monthHeaderRow.dataset.section = sectionId;
+                monthHeaderRow.onclick = () => toggleSection(sectionId);
+                monthHeaderRow.innerHTML = `
+                    <td colspan="17">
+                        <i class="fas fa-calendar-alt mr-3"></i>
+                        <strong>${month.toUpperCase()}</strong>
+                        <span class="ml-3 text-sm opacity-90">(${locationData[month].length} teachers)</span>
+                    </td>
+                `;
+                tbody.appendChild(monthHeaderRow);
+
+                let monthTotals = initializeTotals();
+
+                // Calculate month average for classAvgExcludingEmpty
+                const monthAvgExcludingEmpty = locationData[month].reduce((sum, row) => {
+                    const avg = parseFloat(row.classAvgExcludingEmpty);
+                    return sum + (isNaN(avg) ? 0 : avg);
+                }, 0) / locationData[month].length;
+
+                // Add teacher rows
+                locationData[month].forEach((row, rowIndex) => {
+                    const tr = document.createElement('tr');
+                    
+                    // Check if this trainer is underperforming
+                    const trainerAvg = parseFloat(row.classAvgExcludingEmpty);
+                    const isUnderperforming = !isNaN(trainerAvg) && trainerAvg < monthAvgExcludingEmpty;
+                    
+                    tr.className = `data-row slide-in collapsible-content ${isUnderperforming ? 'underperforming' : ''} ${collapsedSections.has(sectionId) ? 'collapsed' : ''}`;
+                    tr.dataset.section = sectionId;
+                    
+                    const headers = getTableHeaders();
+                    headers.forEach((header, cellIndex) => {
+                        const td = document.createElement('td');
+                        if (header.key === 'teacherName' || header.key === 'location') {
+                            td.textContent = row[header.key] || 'N/A';
+                        } else if (header.key === 'period') {
+                            td.textContent = row[header.key] || '';
+                        } else {
+                            // For numeric columns, show 0 instead of blank
+                            td.textContent = row[header.key] !== undefined && row[header.key] !== '' && row[header.key] !== null ? row[header.key] : '0';
+                        }
+                        // Ensure consistent styling
+                        td.style.verticalAlign = 'middle';
+                        tr.appendChild(td);
+                    });
+                    
+                    tbody.appendChild(tr);
+                    updateTotals(monthTotals, row);
+                });
+
+                // Add month subtotal row (collapsible)
+                const monthTotalsRow = document.createElement('tr');
+                monthTotalsRow.className = `totals-row collapsible-content ${collapsedSections.has(sectionId) ? 'collapsed' : ''}`;
+                monthTotalsRow.dataset.section = sectionId;
+                monthTotalsRow.innerHTML = createTotalsRowHTML(monthTotals, `${month} Subtotal`, '-');
+                tbody.appendChild(monthTotalsRow);
+                updateTotals(locationTotals, monthTotals);
+            });
+
+            // Add location grand total
+            const grandTotalsRow = document.createElement('tr');
+            grandTotalsRow.className = 'grand-totals-row';
+            grandTotalsRow.innerHTML = createTotalsRowHTML(locationTotals, `${locationName} TOTAL`, '-');
+            tbody.appendChild(grandTotalsRow);
+
+            table.appendChild(tbody);
+            return table;
+        }
+
+        function createMonthGroupedTable(data) {
+            // Group data by month first, then by location
+            const groupedData = data.reduce((acc, row) => {
+                const period = row.period || 'Unknown';
+                if (!acc[period]) acc[period] = {};
+                if (!acc[period][row.location]) acc[period][row.location] = [];
+                acc[period][row.location].push(row);
+                return acc;
+            }, {});
+
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            table.id = 'main-data-table';
+
+            // Create header
+            const thead = createTableHeader();
+            table.appendChild(thead);
+
+            // Create body
+            const tbody = document.createElement('tbody');
+            let overallTotals = initializeTotals();
+
+            // Sort months chronologically
+            const sortedMonths = Object.keys(groupedData).sort((a, b) => {
+                const [monthA, yearA] = a.split('-');
+                const [monthB, yearB] = b.split('-');
+                const dateA = new Date(`${monthA} 20${yearA}`);
+                const dateB = new Date(`${monthB} 20${yearB}`);
+                return dateA - dateB;
+            });
+
+            sortedMonths.forEach((month, monthIndex) => {
+                const monthId = `month-${month}`;
+                
+                // Add month header (collapsible)
+                const monthHeaderRow = document.createElement('tr');
+                monthHeaderRow.className = 'month-header collapsible-row';
+                monthHeaderRow.dataset.section = monthId;
+                monthHeaderRow.onclick = () => toggleSection(monthId);
+                monthHeaderRow.innerHTML = `
+                    <td colspan="17">
+                        <i class="fas fa-calendar-alt mr-3"></i>
+                        <strong>${month.toUpperCase()}</strong>
+                        <span class="ml-3 text-sm opacity-90">(${Object.values(groupedData[month]).reduce((sum, loc) => sum + loc.length, 0)} records)</span>
+                    </td>
+                `;
+                tbody.appendChild(monthHeaderRow);
+
+                let monthTotals = initializeTotals();
+                const sortedLocations = Object.keys(groupedData[month]).sort();
+
+                sortedLocations.forEach((location, locationIndex) => {
+                    const locationId = `${monthId}-${location}`;
+                    
+                    // Add location header (collapsible)
+                    const locationHeaderRow = document.createElement('tr');
+                    locationHeaderRow.className = `location-header collapsible-content ${collapsedSections.has(monthId) ? 'collapsed' : ''}`;
+                    locationHeaderRow.dataset.section = monthId;
+                    locationHeaderRow.innerHTML = `
+                        <td colspan="17">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            <strong>${location}</strong>
+                            <span class="ml-2 text-sm opacity-90">(${groupedData[month][location].length} teachers)</span>
+                        </td>
+                    `;
+                    tbody.appendChild(locationHeaderRow);
+
+                    let locationTotals = initializeTotals();
+
+                    // Calculate location average for classAvgExcludingEmpty
+                    const locationAvgExcludingEmpty = groupedData[month][location].reduce((sum, row) => {
+                        const avg = parseFloat(row.classAvgExcludingEmpty);
+                        return sum + (isNaN(avg) ? 0 : avg);
+                    }, 0) / groupedData[month][location].length;
+
+                    // Add teacher rows
+                    groupedData[month][location].forEach((row, rowIndex) => {
+                        const tr = document.createElement('tr');
+                        
+                        // Check if this trainer is underperforming
+                        const trainerAvg = parseFloat(row.classAvgExcludingEmpty);
+                        const isUnderperforming = !isNaN(trainerAvg) && trainerAvg < locationAvgExcludingEmpty;
+                        
+                        tr.className = `data-row slide-in collapsible-content ${isUnderperforming ? 'underperforming' : ''} ${collapsedSections.has(monthId) ? 'collapsed' : ''}`;
+                        tr.dataset.section = monthId;
+                        
+                        const headers = getTableHeaders();
+                        headers.forEach((header, cellIndex) => {
+                            const td = document.createElement('td');
+                            if (header.key === 'teacherName' || header.key === 'location') {
+                                td.textContent = row[header.key] || 'N/A';
+                            } else if (header.key === 'period') {
+                                td.textContent = row[header.key] || '';
+                            } else {
+                                // For numeric columns, show 0 instead of blank
+                                td.textContent = row[header.key] !== undefined && row[header.key] !== '' && row[header.key] !== null ? row[header.key] : '0';
+                            }
+                            // Ensure consistent styling
+                            td.style.verticalAlign = 'middle';
+                            tr.appendChild(td);
+                        });
+                        
+                        tbody.appendChild(tr);
+                        updateTotals(locationTotals, row);
+                    });
+
+                    // Add location subtotal
+                    const locationTotalsRow = document.createElement('tr');
+                    locationTotalsRow.className = `totals-row collapsible-content ${collapsedSections.has(monthId) ? 'collapsed' : ''}`;
+                    locationTotalsRow.dataset.section = monthId;
+                    locationTotalsRow.innerHTML = createTotalsRowHTML(locationTotals, `${location} Subtotal`, '-');
+                    tbody.appendChild(locationTotalsRow);
+
+                    updateTotals(monthTotals, locationTotals);
+                });
+
+                // Add month total (collapsible)
+                const monthTotalsRow = document.createElement('tr');
+                monthTotalsRow.className = `totals-row collapsible-row`;
+                monthTotalsRow.dataset.section = `${monthId}-totals`;
+                monthTotalsRow.onclick = () => toggleSection(`${monthId}-totals`);
+                monthTotalsRow.innerHTML = createTotalsRowHTML(monthTotals, `${month.toUpperCase()} TOTAL`, '-');
+                tbody.appendChild(monthTotalsRow);
+
+                updateTotals(overallTotals, monthTotals);
+            });
+
+            // Add grand total
+            const grandTotalsRow = document.createElement('tr');
+            grandTotalsRow.className = 'grand-totals-row';
+            grandTotalsRow.innerHTML = createTotalsRowHTML(overallTotals, 'GRAND TOTAL', '-');
+            tbody.appendChild(grandTotalsRow);
+
+            table.appendChild(tbody);
+            return table;
+        }
+
+        function displayTrainerView(data) {
+            const tableContainer = document.getElementById('table-container');
+            tableContainer.innerHTML = '';
+
+            // Group data by teacher, then by location, then by month
+            const trainerData = data.reduce((acc, row) => {
+                const teacherName = row.teacherName || 'Unknown';
+                const location = row.location || 'Unknown';
+                const period = row.period || 'Unknown';
+                
+                if (!acc[teacherName]) acc[teacherName] = {};
+                if (!acc[teacherName][location]) acc[teacherName][location] = {};
+                if (!acc[teacherName][location][period]) acc[teacherName][location][period] = row;
+                
+                return acc;
+            }, {});
+
+            // Create tabs container for trainers
+            const tabsContainer = document.createElement('div');
+            tabsContainer.className = 'tabs-container';
+
+            // Create tab buttons for trainers
+            const tabButtons = document.createElement('div');
+            tabButtons.className = 'tab-buttons';
+
+            const trainers = Object.keys(trainerData).sort();
+            
+            trainers.forEach((trainer, index) => {
+                const button = document.createElement('button');
+                button.className = `tab-button ${index === 0 ? 'active' : ''}`;
+                button.textContent = trainer;
+                button.onclick = () => switchTab(trainer, trainers);
+                tabButtons.appendChild(button);
+            });
+
+            tabsContainer.appendChild(tabButtons);
+
+            // Create tab contents for each trainer
+            trainers.forEach((trainer, index) => {
+                const tabContent = document.createElement('div');
+                tabContent.className = `tab-content elegant-card ${index === 0 ? 'active' : ''}`;
+                tabContent.id = `tab-${trainer.replace(/\s+/g, '-')}`;
+
+                // Header
+                const header = document.createElement('div');
+                header.className = 'premium-header';
+                header.innerHTML = `
+                    <h3><i class="fas fa-user-tie mr-3"></i>${trainer}</h3>
+                `;
+                tabContent.appendChild(header);
+
+                // Create tables for each location
+                const locations = Object.keys(trainerData[trainer]).sort();
+                
+                locations.forEach(location => {
+                    const table = createTrainerTable(trainerData[trainer][location], trainer, location);
+                    tabContent.appendChild(table);
+                });
+
+                tabsContainer.appendChild(tabContent);
+            });
+
+            tableContainer.appendChild(tabsContainer);
+        }
+
+        function createTrainerTable(monthData, trainerName, location) {
+            const tableWrapper = document.createElement('div');
+            tableWrapper.style.marginBottom = '30px';
+            
+            // Location header
+            const locationHeader = document.createElement('div');
+            locationHeader.style.cssText = `
+                background: linear-gradient(135deg, #3f51b5 0%, #5e35b1 100%);
+                color: white;
+                padding: 15px 20px;
+                font-size: 16px;
+                font-weight: 700;
+                margin-top: 20px;
+                border-radius: 8px 8px 0 0;
+            `;
+            locationHeader.innerHTML = `<i class="fas fa-map-marker-alt mr-2"></i>${location}`;
+            tableWrapper.appendChild(locationHeader);
+
+            // Create table
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            table.style.marginTop = '0';
+
+            // Get all months
+            const months = Object.keys(monthData).sort((a, b) => {
+                const [monthA, yearA] = a.split('-');
+                const [monthB, yearB] = b.split('-');
+                const dateA = new Date(`${monthA} 20${yearA}`);
+                const dateB = new Date(`${monthB} 20${yearB}`);
+                return dateA - dateB;
+            });
+
+            // Create header row
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            // First column: Metric name
+            const metricHeader = document.createElement('th');
+            metricHeader.textContent = 'Metric';
+            metricHeader.style.width = '200px';
+            metricHeader.style.textAlign = 'left';
+            headerRow.appendChild(metricHeader);
+
+            // Month columns
+            months.forEach(month => {
+                const th = document.createElement('th');
+                th.textContent = month;
+                th.style.width = '100px';
+                headerRow.appendChild(th);
+            });
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Create body with metrics
+            const tbody = document.createElement('tbody');
+            
+            const metrics = [
+                { key: 'cycleSessions', label: 'Cycle Sessions', icon: 'fas fa-sync' },
+                { key: 'emptyCycleSessions', label: 'Empty Cycle', icon: 'fas fa-times-circle' },
+                { key: 'nonEmptyCycleSessions', label: 'Full Cycle', icon: 'fas fa-check-circle' },
+                { key: 'cycleCustomers', label: 'Cycle Customers', icon: 'fas fa-users' },
+                { key: 'barreSessions', label: 'Barre Sessions', icon: 'fas fa-balance-scale' },
+                { key: 'emptyBarreSessions', label: 'Empty Barre', icon: 'fas fa-times-circle' },
+                { key: 'nonEmptyBarreSessions', label: 'Full Barre', icon: 'fas fa-check-circle' },
+                { key: 'barreCustomers', label: 'Barre Customers', icon: 'fas fa-users' },
+                { key: 'totalSessions', label: 'Total Sessions', icon: 'fas fa-th-list' },
+                { key: 'totalEmptySessions', label: 'Empty Total', icon: 'fas fa-times-circle' },
+                { key: 'totalNonEmptySessions', label: 'Full Total', icon: 'fas fa-check-circle' },
+                { key: 'totalCustomers', label: 'Total Customers', icon: 'fas fa-users' },
+                { key: 'classAvgExcludingEmpty', label: 'Avg (Ex. Empty)', icon: 'fas fa-chart-line' },
+                { key: 'classAvgIncludingEmpty', label: 'Avg (Inc. Empty)', icon: 'fas fa-chart-line' }
+            ];
+
+            metrics.forEach(metric => {
+                const tr = document.createElement('tr');
+                
+                // Metric name cell
+                const metricCell = document.createElement('td');
+                metricCell.innerHTML = `<i class="${metric.icon} mr-2"></i>${metric.label}`;
+                metricCell.style.textAlign = 'left';
+                metricCell.style.fontWeight = '600';
+                metricCell.style.width = '200px';
+                tr.appendChild(metricCell);
+
+                // Data cells for each month
+                months.forEach(month => {
+                    const td = document.createElement('td');
+                    const value = monthData[month] ? monthData[month][metric.key] : '';
+                    td.textContent = value !== undefined && value !== '' && value !== null ? value : '0';
+                    td.style.textAlign = 'center';
+                    td.style.width = '100px';
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+            tableWrapper.appendChild(table);
+            
+            return tableWrapper;
+        }
+
+        function createTableHeader() {
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const headers = getTableHeaders();
+
+            headers.forEach((header, index) => {
+                const th = document.createElement('th');
+                th.innerHTML = `<i class="${header.icon}"></i> ${header.text}`;
+                th.className = 'sortable';
+                th.dataset.column = header.key;
+                th.dataset.index = index;
+                
+                // Apply consistent styling
+                th.style.textAlign = 'center';
+                th.style.verticalAlign = 'middle';
+                
+                th.addEventListener('click', () => sortTable(header.key, index));
+                headerRow.appendChild(th);
+            });
+            
+            thead.appendChild(headerRow);
+            return thead;
+        }
+
+        function getTableHeaders() {
+    return [
+        { key: 'teacherName', text: 'Teacher', icon: 'fas fa-user' },
+        { key: 'location', text: 'Location', icon: 'fas fa-map-marker-alt' },
+        { key: 'period', text: 'Period', icon: 'fas fa-calendar' },
+        { key: 'cycleSessions', text: 'Cycle', icon: 'fas fa-sync' },
+        { key: 'emptyCycleSessions', text: 'Empty Cyc', icon: 'fas fa-times-circle' },
+        { key: 'nonEmptyCycleSessions', text: 'Full Cyc', icon: 'fas fa-check-circle' },
+        { key: 'cycleCustomers', text: 'Cyc Cust', icon: 'fas fa-users' },
+        { key: 'barreSessions', text: 'Barre', icon: 'fas fa-balance-scale' },
+        { key: 'emptyBarreSessions', text: 'Empty Br', icon: 'fas fa-times-circle' },
+        { key: 'nonEmptyBarreSessions', text: 'Full Br', icon: 'fas fa-check-circle' },
+        { key: 'barreCustomers', text: 'Br Cust', icon: 'fas fa-users' },
+        { key: 'totalSessions', text: 'Total', icon: 'fas fa-th-list' },
+        { key: 'totalEmptySessions', text: 'Empty Tot', icon: 'fas fa-times-circle' },
+        { key: 'totalNonEmptySessions', text: 'Full Tot', icon: 'fas fa-check-circle' },
+        { key: 'totalCustomers', text: 'All Cust', icon: 'fas fa-users' },
+        { key: 'classAvgExcludingEmpty', text: 'Avg ExEmpty', icon: 'fas fa-chart-line' },
+        { key: 'classAvgIncludingEmpty', text: 'Avg InEmpty', icon: 'fas fa-chart-line' }
+    ];
+}
+
+        function initializeTotals() {
+            return {
                 cycleSessions: 0,
                 emptyCycleSessions: 0,
                 nonEmptyCycleSessions: 0,
@@ -399,209 +1575,495 @@
                 totalNonEmptySessions: 0,
                 totalCustomers: 0
             };
+        }
 
-            for (const location in groupedData) {
-                const button = document.createElement('button');
-                button.className = 'collapsible';
-                button.textContent = location;
-                button.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    const content = this.nextElementSibling;
-                    content.style.display = content.style.display === 'block' ? 'none' : 'block';
-                });
+        function updateTotals(totals, row) {
+            totals.cycleSessions += row.cycleSessions || 0;
+            totals.emptyCycleSessions += row.emptyCycleSessions || 0;
+            totals.nonEmptyCycleSessions += row.nonEmptyCycleSessions || 0;
+            totals.cycleCustomers += row.cycleCustomers || 0;
+            totals.barreSessions += row.barreSessions || 0;
+            totals.emptyBarreSessions += row.emptyBarreSessions || 0;
+            totals.nonEmptyBarreSessions += row.nonEmptyBarreSessions || 0;
+            totals.barreCustomers += row.barreCustomers || 0;
+            totals.totalSessions += row.totalSessions || 0;
+            totals.totalEmptySessions += row.totalEmptySessions || 0;
+            totals.totalNonEmptySessions += row.totalNonEmptySessions || 0;
+            totals.totalCustomers += row.totalCustomers || 0;
+        }
 
-                const content = document.createElement('div');
-                content.className = 'content';
-                content.style.display = 'none'; // Closed by default
+        function createTotalsRowHTML(totals, label, period) {
+    const avgExcludingEmpty = totals.totalNonEmptySessions > 0 ? 
+        (totals.totalCustomers / totals.totalNonEmptySessions).toFixed(2) : 'N/A';
+    const avgIncludingEmpty = totals.totalSessions > 0 ? 
+        (totals.totalCustomers / totals.totalSessions).toFixed(2) : 'N/A';
 
-                const tableWrapper = document.createElement('div');
-                tableWrapper.className = 'overflow-x-auto';
+    return `
+        <td><strong>${label}</strong></td>
+        <td>-</td> 
+        <td>-</td>        
+        <td>${totals.cycleSessions || 0}</td>
+        <td>${totals.emptyCycleSessions || 0}</td>
+        <td>${totals.nonEmptyCycleSessions || 0}</td>
+        <td>${totals.cycleCustomers || 0}</td>
+        <td>${totals.barreSessions || 0}</td>
+        <td>${totals.emptyBarreSessions || 0}</td>
+        <td>${totals.nonEmptyBarreSessions || 0}</td>
+        <td>${totals.barreCustomers || 0}</td>
+        <td>${totals.totalSessions || 0}</td>
+        <td>${totals.totalEmptySessions || 0}</td>
+        <td>${totals.totalNonEmptySessions || 0}</td>
+        <td>${totals.totalCustomers || 0}</td>
+        <td>${avgExcludingEmpty}</td>
+        <td>${avgIncludingEmpty}</td>
+    `;
+}
+        function showStats(data) {
+            const statsContainer = document.getElementById('stats-overview');
+            const totals = data.reduce((acc, row) => {
+                acc.totalSessions += row.totalSessions || 0;
+                acc.totalCustomers += row.totalCustomers || 0;
+                acc.totalTeachers++;
+                acc.locations.add(row.location);
+                return acc;
+            }, { totalSessions: 0, totalCustomers: 0, totalTeachers: 0, locations: new Set() });
 
-                const table = document.createElement('table');
-                table.className = 'min-w-full bg-white border border-gray-200';
+            const avgCustomersPerSession = totals.totalSessions > 0 ? 
+                (totals.totalCustomers / totals.totalSessions).toFixed(2) : 0;
 
-                const thead = document.createElement('thead');
-                const headerRow = document.createElement('tr');
-                const headers = [
-                    { text: 'Teacher Name', icon: 'fas fa-user' },
-                    { text: 'Location', icon: 'fas fa-map-marker-alt' },
-                    { text: 'Cycle Sessions', icon: 'fas fa-sync' },
-                    { text: 'Empty Cycle Sessions', icon: 'fas fa-times-circle' },
-                    { text: 'Non-Empty Cycle Sessions', icon: 'fas fa-check-circle' },
-                    { text: 'Cycle Customers', icon: 'fas fa-users' },
-                    { text: 'Barre Sessions', icon: 'fas fa-balance-scale' },
-                    { text: 'Empty Barre Sessions', icon: 'fas fa-times-circle' },
-                    { text: 'Non-Empty Barre Sessions', icon: 'fas fa-check-circle' },
-                    { text: 'Barre Customers', icon: 'fas fa-users' },
-                    { text: 'Total Sessions', icon: 'fas fa-th-list' },
-                    { text: 'Total Empty Sessions', icon: 'fas fa-times-circle' },
-                    { text: 'Total Non-Empty Sessions', icon: 'fas fa-check-circle' },
-                    { text: 'Total Customers', icon: 'fas fa-users' },
-                    { text: 'Class Avg (Excluding Empty)', icon: 'fas fa-chart-line' },
-                    { text: 'Class Avg (Including Empty)', icon: 'fas fa-chart-line' },
-                    { text: 'Period', icon: 'fas fa-calendar' }
-                ];
-
-                headers.forEach(header => {
-                    const th = document.createElement('th');
-                    th.innerHTML = `<i class="${header.icon}"></i> ${header.text}`;
-                    headerRow.appendChild(th);
-                });
-                thead.appendChild(headerRow);
-                table.appendChild(thead);
-
-                const tbody = document.createElement('tbody');
-                let locationTotals = {
-                    cycleSessions: 0,
-                    emptyCycleSessions: 0,
-                    nonEmptyCycleSessions: 0,
-                    cycleCustomers: 0,
-                    barreSessions: 0,
-                    emptyBarreSessions: 0,
-                    nonEmptyBarreSessions: 0,
-                    barreCustomers: 0,
-                    totalSessions: 0,
-                    totalEmptySessions: 0,
-                    totalNonEmptySessions: 0,
-                    totalCustomers: 0
-                };
-
-                groupedData[location].forEach(row => {
-                    const tr = document.createElement('tr');
-                    Object.values(row).forEach(cell => {
-                        const td = document.createElement('td');
-                        td.textContent = cell;
-                        tr.appendChild(td);
-                    });
-                    tbody.appendChild(tr);
-
-                    // Update location totals
-                    locationTotals.cycleSessions += row.cycleSessions;
-                    locationTotals.emptyCycleSessions += row.emptyCycleSessions;
-                    locationTotals.nonEmptyCycleSessions += row.nonEmptyCycleSessions;
-                    locationTotals.cycleCustomers += row.cycleCustomers;
-                    locationTotals.barreSessions += row.barreSessions;
-                    locationTotals.emptyBarreSessions += row.emptyBarreSessions;
-                    locationTotals.nonEmptyBarreSessions += row.nonEmptyBarreSessions;
-                    locationTotals.barreCustomers += row.barreCustomers;
-                    locationTotals.totalSessions += row.totalSessions;
-                    locationTotals.totalEmptySessions += row.totalEmptySessions;
-                    locationTotals.totalNonEmptySessions += row.totalNonEmptySessions;
-                    locationTotals.totalCustomers += row.totalCustomers;
-                });
-
-                // Add totals row for location
-                const totalsRow = document.createElement('tr');
-                totalsRow.style.fontWeight = 'bold';
-                const locationClassAvgExcludingEmpty = locationTotals.totalNonEmptySessions > 0 ? (locationTotals.totalCustomers / locationTotals.totalNonEmptySessions).toFixed(2) : 'N/A';
-                const locationClassAvgIncludingEmpty = locationTotals.totalSessions > 0 ? (locationTotals.totalCustomers / locationTotals.totalSessions).toFixed(2) : 'N/A';
-                totalsRow.innerHTML = `<td>Totals</td><td>${location}</td><td>${locationTotals.cycleSessions}</td><td>${locationTotals.emptyCycleSessions}</td><td>${locationTotals.nonEmptyCycleSessions}</td><td>${locationTotals.cycleCustomers}</td><td>${locationTotals.barreSessions}</td><td>${locationTotals.emptyBarreSessions}</td><td>${locationTotals.nonEmptyBarreSessions}</td><td>${locationTotals.barreCustomers}</td><td>${locationTotals.totalSessions}</td><td>${locationTotals.totalEmptySessions}</td><td>${locationTotals.totalNonEmptySessions}</td><td>${locationTotals.totalCustomers}</td><td>${locationClassAvgExcludingEmpty}</td><td>${locationClassAvgIncludingEmpty}</td><td>-</td>`;
-                tbody.appendChild(totalsRow);
-
-                table.appendChild(tbody);
-                tableWrapper.appendChild(table);
-                content.appendChild(tableWrapper);
-                tableContainer.appendChild(button);
-                tableContainer.appendChild(content);
-
-                // Update overall totals
-                overallTotals.cycleSessions += locationTotals.cycleSessions;
-                overallTotals.emptyCycleSessions += locationTotals.emptyCycleSessions;
-                overallTotals.nonEmptyCycleSessions += locationTotals.nonEmptyCycleSessions;
-                overallTotals.cycleCustomers += locationTotals.cycleCustomers;
-                overallTotals.barreSessions += locationTotals.barreSessions;
-                overallTotals.emptyBarreSessions += locationTotals.emptyBarreSessions;
-                overallTotals.nonEmptyBarreSessions += locationTotals.nonEmptyBarreSessions;
-                overallTotals.barreCustomers += locationTotals.barreCustomers;
-                overallTotals.totalSessions += locationTotals.totalSessions;
-                overallTotals.totalEmptySessions += locationTotals.totalEmptySessions;
-                overallTotals.totalNonEmptySessions += locationTotals.totalNonEmptySessions;
-                overallTotals.totalCustomers += locationTotals.totalCustomers;
-            }
-
-            // Add grand totals row
-            const grandTotalsRow = document.createElement('tr');
-            grandTotalsRow.style.fontWeight = 'bold';
-            const overallClassAvgExcludingEmpty = overallTotals.totalNonEmptySessions > 0 ? (overallTotals.totalCustomers / overallTotals.totalNonEmptySessions).toFixed(2) : 'N/A';
-            const overallClassAvgIncludingEmpty = overallTotals.totalSessions > 0 ? (overallTotals.totalCustomers / overallTotals.totalSessions).toFixed(2) : 'N/A';
-            grandTotalsRow.innerHTML = `<td>Grand Total</td><td>-</td><td>${overallTotals.cycleSessions}</td><td>${overallTotals.emptyCycleSessions}</td><td>${overallTotals.nonEmptyCycleSessions}</td><td>${overallTotals.cycleCustomers}</td><td>${overallTotals.barreSessions}</td><td>${overallTotals.emptyBarreSessions}</td><td>${overallTotals.nonEmptyBarreSessions}</td><td>${overallTotals.barreCustomers}</td><td>${overallTotals.totalSessions}</td><td>${overallTotals.totalEmptySessions}</td><td>${overallTotals.totalNonEmptySessions}</td><td>${overallTotals.totalCustomers}</td><td>${overallClassAvgExcludingEmpty}</td><td>${overallClassAvgIncludingEmpty}</td><td>-</td>`;
-            const grandTotalsTable = document.createElement('table');
-            grandTotalsTable.className = 'min-w-full bg-white border border-gray-200 mt-4 rounded-lg shadow-md';
-            const grandTotalsTbody = document.createElement('tbody');
-            grandTotalsTbody.appendChild(grandTotalsRow);
-            grandTotalsTable.appendChild(grandTotalsTbody);
-
-            document.getElementById('loader').classList.add('hidden');
-            tableContainer.classList.remove('hidden');
-            document.getElementById('drag-drop-area').style.display = 'none';
-            document.getElementById('upload-icon').style.display = 'block';
+            statsContainer.innerHTML = `
+                <div class="stat-card slide-in">
+                    <div class="text-3xl font-bold" style="color: #1a237e;" class="mb-2">
+                        <i class="fas fa-users"></i> ${totals.totalTeachers}
+                    </div>
+                    <div class="text-gray-600">Total Teachers</div>
+                </div>
+                <div class="stat-card slide-in" style="animation-delay: 0.1s">
+                    <div class="text-3xl font-bold" style="color: #283593;" class="mb-2">
+                        <i class="fas fa-map-marker-alt"></i> ${totals.locations.size}
+                    </div>
+                    <div class="text-gray-600">Locations</div>
+                </div>
+                <div class="stat-card slide-in" style="animation-delay: 0.2s">
+                    <div class="text-3xl font-bold" style="color: #3f51b5;" class="mb-2">
+                        <i class="fas fa-th-list"></i> ${totals.totalSessions.toLocaleString()}
+                    </div>
+                    <div class="text-gray-600">Total Sessions</div>
+                </div>
+                <div class="stat-card slide-in" style="animation-delay: 0.3s">
+                    <div class="text-3xl font-bold" style="color: #5e35b1;" class="mb-2">
+                        <i class="fas fa-user-friends"></i> ${totals.totalCustomers.toLocaleString()}
+                    </div>
+                    <div class="text-gray-600">Total Customers</div>
+                </div>
+                <div class="stat-card slide-in" style="animation-delay: 0.4s">
+                    <div class="text-3xl font-bold" style="color: #673ab7;" class="mb-2">
+                        <i class="fas fa-chart-line"></i> ${avgCustomersPerSession}
+                    </div>
+                    <div class="text-gray-600">Avg Customers/Session</div>
+                </div>
+            `;
         }
 
         function toggleUpload() {
-            const dragDropArea = document.getElementById('drag-drop-area');
-            const uploadIcon = document.getElementById('upload-icon');
-            if (dragDropArea.style.display === 'none') {
-                dragDropArea.style.display = 'block';
-                uploadIcon.style.display = 'none';
+            const uploadSection = document.getElementById('upload-section');
+            const dataSection = document.getElementById('data-section');
+            
+            if (uploadSection.style.display === 'none') {
+                uploadSection.style.display = 'block';
+                dataSection.classList.add('hidden');
+                // Reset file input
+                document.getElementById('file-upload').value = '';
+            }
+        }
+
+        // Table sorting functionality
+        function sortTable(columnKey, columnIndex) {
+            const table = document.getElementById('main-data-table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr.data-row'));
+            
+            // Update sort direction
+            if (currentSortColumn === columnKey) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
             } else {
-                dragDropArea.style.display = 'none';
-                uploadIcon.style.display = 'block';
+                currentSortDirection = 'asc';
+                currentSortColumn = columnKey;
+            }
+            
+            // Update header indicators
+            table.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            const currentHeader = table.querySelector(`th[data-column="${columnKey}"]`);
+            currentHeader.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                const aValue = a.cells[columnIndex].textContent.trim();
+                const bValue = b.cells[columnIndex].textContent.trim();
+                
+                // Handle numeric values
+                const aNum = parseFloat(aValue);
+                const bNum = parseFloat(bValue);
+                
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return currentSortDirection === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+                
+                // Handle text values
+                return currentSortDirection === 'asc' ? 
+                    aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+            });
+            
+            // Rebuild table with sorted data
+            const sortedData = [];
+            const groupedRows = {};
+            
+            // Group sorted rows by location
+            rows.forEach(row => {
+                const location = row.cells[1].textContent.trim();
+                if (!groupedRows[location]) groupedRows[location] = [];
+                groupedRows[location].push(row);
+            });
+            
+            // Rebuild tbody
+            tbody.innerHTML = '';
+            Object.keys(groupedRows).sort().forEach(location => {
+                // Add location header
+                const locationHeaderRow = document.createElement('tr');
+                locationHeaderRow.className = 'group-header';
+                locationHeaderRow.innerHTML = `
+                    <td colspan="17">
+                        <i class="fas fa-map-marker-alt mr-2"></i>
+                        <strong>${location}</strong>
+                        <span class="ml-2 text-sm">(${groupedRows[location].length} teachers)</span>
+                    </td>
+                `;
+                tbody.appendChild(locationHeaderRow);
+                
+                // Add sorted rows for this location
+                groupedRows[location].forEach(row => {
+                    tbody.appendChild(row);
+                });
+                
+                // Recalculate and add location totals
+                const locationTotals = calculateLocationTotals(groupedRows[location]);
+                const locationTotalsRow = document.createElement('tr');
+                locationTotalsRow.className = 'totals-row';
+                locationTotalsRow.innerHTML = createTotalsRowHTML(locationTotals, `${location} Totals`, '-');
+                tbody.appendChild(locationTotalsRow);
+            });
+            
+            // Recalculate grand totals
+            const overallTotals = calculateGrandTotals(rows);
+            const grandTotalsRow = document.createElement('tr');
+            grandTotalsRow.className = 'grand-totals-row';
+            grandTotalsRow.innerHTML = createTotalsRowHTML(overallTotals, 'GRAND TOTAL', '-');
+            tbody.appendChild(grandTotalsRow);
+        }
+
+        function calculateLocationTotals(rows) {
+            const totals = initializeTotals();
+            rows.forEach(row => {
+                const cells = row.cells;
+                totals.cycleSessions += parseInt(cells[3].textContent) || 0;
+                totals.emptyCycleSessions += parseInt(cells[4].textContent) || 0;
+                totals.nonEmptyCycleSessions += parseInt(cells[5].textContent) || 0;
+                totals.cycleCustomers += parseInt(cells[6].textContent) || 0;
+                totals.barreSessions += parseInt(cells[7].textContent) || 0;
+                totals.emptyBarreSessions += parseInt(cells[8].textContent) || 0;
+                totals.nonEmptyBarreSessions += parseInt(cells[9].textContent) || 0;
+                totals.barreCustomers += parseInt(cells[10].textContent) || 0;
+                totals.totalSessions += parseInt(cells[11].textContent) || 0;
+                totals.totalEmptySessions += parseInt(cells[12].textContent) || 0;
+                totals.totalNonEmptySessions += parseInt(cells[13].textContent) || 0;
+                totals.totalCustomers += parseInt(cells[14].textContent) || 0;
+            });
+            return totals;
+        }
+
+        function calculateGrandTotals(rows) {
+            const totals = initializeTotals();
+            rows.forEach(row => {
+                const cells = row.cells;
+                totals.cycleSessions += parseInt(cells[3].textContent) || 0;
+                totals.emptyCycleSessions += parseInt(cells[4].textContent) || 0;
+                totals.nonEmptyCycleSessions += parseInt(cells[5].textContent) || 0;
+                totals.cycleCustomers += parseInt(cells[6].textContent) || 0;
+                totals.barreSessions += parseInt(cells[7].textContent) || 0;
+                totals.emptyBarreSessions += parseInt(cells[8].textContent) || 0;
+                totals.nonEmptyBarreSessions += parseInt(cells[9].textContent) || 0;
+                if (isVisible) visibleCount++;
+            });
+            
+            if (searchTerm && visibleCount === 0) {
+                showNotification('No results found', 'error');
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('search-input').value = '';
+            const table = document.getElementById('main-data-table');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                row.style.display = '';
+            });
+            
+            showNotification('Filters cleared', 'success');
+        }
+
+        // Copy to clipboard functionality
+        async function copyToClipboard() {
+            try {
+                const tables = document.querySelectorAll('.data-table');
+                let textContent = '';
+                
+                tables.forEach(table => {
+                    const rows = table.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        if (row.style.display !== 'none' && !row.classList.contains('collapsed')) {
+                            const cells = Array.from(row.cells).map(cell => 
+                                cell.textContent.trim().replace(/\s+/g, ' ')
+                            );
+                            textContent += cells.join('\t') + '\n';
+                        }
+                    });
+                });
+                
+                await navigator.clipboard.writeText(textContent);
+                showNotification('Table data copied to clipboard!', 'success');
+            } catch (err) {
+                showNotification('Failed to copy to clipboard', 'error');
+            }
+        }
+
+        // Tabbed interface functions
+        function switchTab(activeLocation, allLocations) {
+            // Update button states
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update content visibility
+            allLocations.forEach(location => {
+                const tabContent = document.getElementById(`tab-${location.replace(/\s+/g, '-')}`);
+                if (tabContent) {
+                    tabContent.classList.remove('active');
+                }
+            });
+
+            const activeTab = document.getElementById(`tab-${activeLocation.replace(/\s+/g, '-')}`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+        }
+
+        // Collapsible functionality
+        function toggleSection(sectionId) {
+            const isCollapsed = collapsedSections.has(sectionId);
+            
+            if (isCollapsed) {
+                collapsedSections.delete(sectionId);
+            } else {
+                collapsedSections.add(sectionId);
+            }
+
+            // Update visual state
+            const elements = document.querySelectorAll(`[data-section="${sectionId}"]`);
+            elements.forEach(element => {
+                if (element.classList.contains('collapsible-row')) {
+                    element.classList.toggle('collapsed', !isCollapsed);
+                } else if (element.classList.contains('collapsible-content')) {
+                    element.classList.toggle('collapsed', !isCollapsed);
+                }
+            });
+        }
+
+        function toggleAllTotals() {
+            const toggleButton = document.getElementById('toggle-totals-text');
+            const isCollapsing = toggleButton.textContent === 'Collapse All';
+            
+            // Get all collapsible sections
+            const sections = document.querySelectorAll('.collapsible-row[data-section]');
+            
+            sections.forEach(section => {
+                const sectionId = section.dataset.section;
+                if (isCollapsing) {
+                    collapsedSections.add(sectionId);
+                } else {
+                    collapsedSections.delete(sectionId);
+                }
+                
+                // Update visual state
+                const elements = document.querySelectorAll(`[data-section="${sectionId}"]`);
+                elements.forEach(element => {
+                    if (element.classList.contains('collapsible-row')) {
+                        element.classList.toggle('collapsed', isCollapsing);
+                    } else if (element.classList.contains('collapsible-content')) {
+                        element.classList.toggle('collapsed', isCollapsing);
+                    }
+                });
+            });
+            
+            // Update button text
+            toggleButton.textContent = isCollapsing ? 'Expand All' : 'Collapse All';
+            showNotification(`All sections ${isCollapsing ? 'collapsed' : 'expanded'}`, 'success');
+        }
+
+        function changeGrouping() {
+            if (consolidatedData.length > 0) {
+                displayTable(consolidatedData);
+                showNotification(`Grouping changed to ${document.getElementById('grouping-select').value}`, 'success');
             }
         }
 
         function downloadCSV() {
-            const table = document.querySelector('#table-container table');
-            let csvContent = '';
-            const rows = table.querySelectorAll('tr');
+            try {
+                const tables = document.querySelectorAll('.data-table');
+                if (tables.length === 0) {
+                    showNotification('No data available to export', 'error');
+                    return;
+                }
 
-            rows.forEach(row => {
-                const cols = row.querySelectorAll('td, th');
-                const rowData = Array.from(cols).map(col => col.textContent).join(',');
-                csvContent += rowData + '\n';
-            });
+                let csvContent = '';
+                
+                tables.forEach((table, tableIndex) => {
+                    if (tableIndex > 0) csvContent += '\n\n'; // Separate tables
+                    
+                    const rows = table.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        if (row.style.display !== 'none' && !row.classList.contains('collapsed')) {
+                            const cols = Array.from(row.querySelectorAll('td, th'));
+                            const rowData = cols.map(col => {
+                                let text = col.textContent.trim();
+                                // Escape commas and quotes
+                                if (text.includes(',') || text.includes('"')) {
+                                    text = '"' + text.replace(/"/g, '""') + '"';
+                                }
+                                return text;
+                            });
+                            csvContent += rowData.join(',') + '\n';
+                        }
+                    });
+                });
 
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'table_data.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `physique57_analytics_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showNotification('CSV file downloaded successfully!', 'success');
+            } catch (error) {
+                showNotification('Error downloading CSV file', 'error');
+            }
         }
 
         function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const table = document.querySelector('#table-container table');
-            doc.autoTable({ html: table });
-            doc.save('table_data.pdf');
+            try {
+                const { jsPDF } = window.jspdf;
+                const table = document.getElementById('main-data-table');
+                
+                if (!table) {
+                    showNotification('No data available to export', 'error');
+                    return;
+                }
+
+                const doc = new jsPDF('landscape', 'mm', 'a4');
+                
+                // Add title
+                doc.setFontSize(16);
+                doc.setTextColor(26, 54, 93);
+                doc.text('Physique 57 Analytics Report', 14, 20);
+                
+                // Add date
+                doc.setFontSize(10);
+                doc.setTextColor(74, 85, 104);
+                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+                
+                // Extract table data
+                const headers = Array.from(table.querySelectorAll('thead th')).map(th => 
+                    th.textContent.replace(/.*\s/, '').trim()
+                );
+                
+                const rows = [];
+                table.querySelectorAll('tbody tr').forEach(row => {
+                    if (row.style.display !== 'none' && !row.classList.contains('group-header')) {
+                        const rowData = Array.from(row.cells).map(cell => 
+                            cell.textContent.trim()
+                        );
+                        rows.push(rowData);
+                    }
+                });
+                
+                doc.autoTable({
+                    head: [headers],
+                    body: rows,
+                    startY: 35,
+                    styles: {
+                        fontSize: 7,
+                        cellPadding: 2
+                    },
+                    headStyles: {
+                        fillColor: [26, 54, 93],
+                        textColor: 255,
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: {
+                        fillColor: [247, 250, 252]
+                    }
+                });
+                
+                doc.save(`physique57_analytics_${new Date().toISOString().split('T')[0]}.pdf`);
+                showNotification('PDF file downloaded successfully!', 'success');
+            } catch (error) {
+                showNotification('Error downloading PDF file', 'error');
+            }
         }
 
         function downloadImage() {
-            const tableContainer = document.getElementById('table-container');
-            html2canvas(tableContainer).then(canvas => {
-                const a = document.createElement('a');
-                a.href = canvas.toDataURL('image/png');
-                a.download = 'table_data.png';
-                a.click();
-            });
-        }
+            try {
+                const tableContainer = document.getElementById('table-container');
+                
+                if (!tableContainer) {
+                    showNotification('No data available to export', 'error');
+                    return;
+                }
 
-        function downloadConsolidatedCSV() {
-            // Assuming consolidated data is stored in a variable called consolidatedData
-            let csvContent = 'Teacher Name,Location,Cycle Sessions,Empty Cycle Sessions,Non-Empty Cycle Sessions,Cycle Customers,Barre Sessions,Empty Barre Sessions,Non-Empty Barre Sessions,Barre Customers,Total Sessions,Total Empty Sessions,Total Non-Empty Sessions,Total Customers,Class Avg (Excluding Empty),Class Avg (Including Empty),Period\n';
-            
-            consolidatedData.forEach(row => {
-                csvContent += `${row.teacherName},${row.location},${row.cycleSessions},${row.emptyCycleSessions},${row.nonEmptyCycleSessions},${row.cycleCustomers},${row.barreSessions},${row.emptyBarreSessions},${row.nonEmptyBarreSessions},${row.barreCustomers},${row.totalSessions},${row.totalEmptySessions},${row.totalNonEmptySessions},${row.totalCustomers},${row.classAvgExcludingEmpty},${row.classAvgIncludingEmpty},${row.period}\n`;
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'consolidated_data.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+                // Temporarily modify styles for better image capture
+                const originalOverflow = tableContainer.style.overflow;
+                tableContainer.style.overflow = 'visible';
+                
+                html2canvas(tableContainer, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: 0,
+                    width: tableContainer.scrollWidth,
+                    height: tableContainer.scrollHeight
+                }).then(canvas => {
+                    // Restore original styles
+                    tableContainer.style.overflow = originalOverflow;
+                    
+                    const a = document.createElement('a');
+                    a.href = canvas.toDataURL('image/png');
+                    a.download = `physique57_analytics_${new Date().toISOString().split('T')[0]}.png`;
+                    a.click();
+                    
+                    showNotification('PNG image downloaded successfully!', 'success');
+                }).catch(error => {
+                    tableContainer.style.overflow = originalOverflow;
+                    showNotification('Error downloading image file', 'error');
+                });
+            } catch (error) {
+                showNotification('Error downloading image file', 'error');
+            }
         }
 
     </script>
