@@ -1032,41 +1032,69 @@
                 const zip = new JSZip();
                 zip.loadAsync(event.target.result).then(function(contents) {
                     console.log('ZIP loaded successfully, files:', Object.keys(contents.files));
-                    const csvFiles = [];
+                    const aggregateFile = [];
+                    const individualFiles = [];
                     const totalFiles = Object.keys(contents.files).length;
                     let processedFiles = 0;
 
                     Object.keys(contents.files).forEach(function(filename) {
                         console.log('Processing file:', filename);
-                        // Accept both aggregate.csv and regular .csv files
                         if (filename.endsWith('.csv') && !contents.files[filename].dir) {
                             console.log('Adding CSV file:', filename);
-                            csvFiles.push(contents.files[filename].async('string').then(content => {
+                            const filePromise = contents.files[filename].async('string').then(content => {
                                 processedFiles++;
                                 updateProgressBar(processedFiles, totalFiles);
                                 console.log('Processed CSV file:', filename, 'Content length:', content.length);
-                                return content;
-                            }));
+                                return { filename, content };
+                            });
+                            
+                            // Check if this is the aggregate file
+                            if (filename.includes('aggregate-combined') || filename.includes('payroll-report-summary')) {
+                                console.log('Found aggregate file:', filename);
+                                aggregateFile.push(filePromise);
+                            } else {
+                                console.log('Found individual file:', filename);
+                                individualFiles.push(filePromise);
+                            }
                         } else {
                             processedFiles++;
                             updateProgressBar(processedFiles, totalFiles);
                         }
                     });
 
-                    console.log('Total CSV files found:', csvFiles.length);
-                    if (csvFiles.length === 0) {
+                    console.log('Total CSV files found:', aggregateFile.length + individualFiles.length);
+                    if (aggregateFile.length === 0 && individualFiles.length === 0) {
                         showNotification('No CSV files found in the ZIP archive.', 'error');
                         document.getElementById('loader').classList.add('hidden');
                         return;
                     }
 
-                    Promise.all(csvFiles).then(function(csvContents) {
-                        console.log('All CSV files processed, contents:', csvContents.length);
-                        consolidatedData = consolidateCSVData(csvContents);
+                    Promise.all([...aggregateFile, ...individualFiles]).then(function(allFiles) {
+                        console.log('All CSV files processed, total files:', allFiles.length);
+                        
+                        // Separate aggregate and individual file contents
+                        const aggregateContent = allFiles.find(file => 
+                            file.filename.includes('aggregate-combined') || file.filename.includes('payroll-report-summary')
+                        );
+                        const individualContents = allFiles.filter(file => 
+                            !file.filename.includes('aggregate-combined') && !file.filename.includes('payroll-report-summary')
+                        );
+                        
+                        if (!aggregateContent) {
+                            showNotification('No aggregate CSV file found. Looking for momence-teachers-payroll-report-aggregate-combined.csv', 'error');
+                            document.getElementById('loader').classList.add('hidden');
+                            return;
+                        }
+                        
+                        // Store individual files for drill-down functionality
+                        window.individualClassData = individualContents;
+                        
+                        // Process only the aggregate file for main table
+                        consolidatedData = consolidateCSVData([aggregateContent.content]);
                         originalTableData = [...consolidatedData];
                         displayTable(consolidatedData);
                         showStats(consolidatedData);
-                        showNotification('Data processed successfully!', 'success');
+                        showNotification(`Data processed successfully! Main table: 1 aggregate file, Drill-down data: ${individualContents.length} files`, 'success');
                     }).catch(function(error) {
                         console.error('Error processing CSV contents:', error);
                         showNotification('Error processing CSV files: ' + error.message, 'error');
@@ -2390,31 +2418,63 @@
         }
 
         function findTeacherClasses(teacherName, location, period) {
-            // This would search through the original CSV data for individual classes
-            // For now, return mock data - you'll need to store the original class data
-            return [
-                {
-                    date: '2025-12-01',
-                    className: 'PowerCycle 45',
-                    time: '9:00 AM',
-                    checkedIn: 12,
-                    capacity: 20
-                },
-                {
-                    date: '2025-12-03',
-                    className: 'Barre Sculpt',
-                    time: '6:00 PM', 
-                    checkedIn: 8,
-                    capacity: 15
-                },
-                {
-                    date: '2025-12-05',
-                    className: 'PowerCycle 45',
-                    time: '9:00 AM',
-                    checkedIn: 0,
-                    capacity: 20
+            // Check if individual class data is available
+            if (!window.individualClassData || !Array.isArray(window.individualClassData)) {
+                console.log('No individual class data available');
+                return [];
+            }
+            
+            const matchingClasses = [];
+            
+            // Process each individual CSV file
+            window.individualClassData.forEach(fileData => {
+                try {
+                    const parsedData = Papa.parse(fileData.content, { header: true });
+                    if (parsedData.errors.length > 0) {
+                        console.warn(`CSV parsing errors in ${fileData.filename}:`, parsedData.errors);
+                        return;
+                    }
+                    
+                    const data = parsedData.data;
+                    
+                    data.forEach(row => {
+                        // Handle both CSV formats - original and Momence
+                        const teacherFirstName = row['Teacher First Name'] || row['Instructor First Name'] || '';
+                        const teacherLastName = row['Teacher Last Name'] || row['Instructor Last Name'] || '';
+                        const fullTeacherName = `${teacherFirstName} ${teacherLastName}`.trim();
+                        
+                        const rowLocation = row['Location'] || '';
+                        const sessionName = row['Class name'] || row['Class Name'] || '';
+                        const checkedIn = parseInt(row['Checked in']) || 0;
+                        const classDate = row['Class date'] || row['Class Date'] || '';
+                        const classTime = row['Class time'] || row['Class Time'] || 'N/A';
+                        const monthYear = getMonthYear(classDate);
+                        
+                        // Match teacher, location, and period
+                        if (fullTeacherName === teacherName && 
+                            rowLocation === location && 
+                            monthYear === period) {
+                            
+                            matchingClasses.push({
+                                date: classDate,
+                                className: sessionName,
+                                time: classTime,
+                                checkedIn: checkedIn,
+                                capacity: 20, // Default capacity - could be extracted if available in data
+                                filename: fileData.filename
+                            });
+                        }
+                    });
+                } catch (error) {
+                    console.error(`Error processing individual file ${fileData.filename}:`, error);
                 }
-            ];
+            });
+            
+            // Sort by date
+            matchingClasses.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            console.log(`Found ${matchingClasses.length} classes for ${teacherName} at ${location} in ${period}`);
+            return matchingClasses;
         }
 
         function createTeacherDetailsHTML(classes) {
