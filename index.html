@@ -1875,39 +1875,48 @@
 }
         function showStats(data) {
             const statsContainer = document.getElementById('stats-overview');
-            const totals = data.reduce((acc, row) => {
-                acc.totalSessions += row.totalSessions || 0;
-                acc.totalCustomers += row.totalCustomers || 0;
-                acc.totalTeachers++;
-                acc.locations.add(row.location);
-                return acc;
-            }, { totalSessions: 0, totalCustomers: 0, totalTeachers: 0, locations: new Set() });
+            
+            // Calculate unique teachers and locations
+            const uniqueTeachers = new Set();
+            const uniqueLocations = new Set();
+            let totalSessions = 0;
+            let totalCustomers = 0;
+            
+            data.forEach(row => {
+                // Add unique teachers and locations
+                uniqueTeachers.add(row.teacherName);
+                uniqueLocations.add(row.location);
+                
+                // Sum individual session counts (not pre-aggregated totals)
+                totalSessions += (row.cycleSessions || 0) + (row.barreSessions || 0);
+                totalCustomers += (row.cycleCustomers || 0) + (row.barreCustomers || 0);
+            });
 
-            const avgCustomersPerSession = totals.totalSessions > 0 ? 
-                (totals.totalCustomers / totals.totalSessions).toFixed(2) : 0;
+            const avgCustomersPerSession = totalSessions > 0 ? 
+                (totalCustomers / totalSessions).toFixed(2) : 0;
 
             statsContainer.innerHTML = `
                 <div class="stat-card slide-in">
                     <div class="text-3xl font-bold" style="color: #1a237e;" class="mb-2">
-                        <i class="fas fa-users"></i> ${totals.totalTeachers}
+                        <i class="fas fa-users"></i> ${uniqueTeachers.size}
                     </div>
                     <div class="text-gray-600">Total Teachers</div>
                 </div>
                 <div class="stat-card slide-in" style="animation-delay: 0.1s">
                     <div class="text-3xl font-bold" style="color: #283593;" class="mb-2">
-                        <i class="fas fa-map-marker-alt"></i> ${totals.locations.size}
+                        <i class="fas fa-map-marker-alt"></i> ${uniqueLocations.size}
                     </div>
                     <div class="text-gray-600">Locations</div>
                 </div>
                 <div class="stat-card slide-in" style="animation-delay: 0.2s">
                     <div class="text-3xl font-bold" style="color: #3f51b5;" class="mb-2">
-                        <i class="fas fa-th-list"></i> ${totals.totalSessions.toLocaleString()}
+                        <i class="fas fa-th-list"></i> ${totalSessions.toLocaleString()}
                     </div>
                     <div class="text-gray-600">Total Sessions</div>
                 </div>
                 <div class="stat-card slide-in" style="animation-delay: 0.3s">
                     <div class="text-3xl font-bold" style="color: #5e35b1;" class="mb-2">
-                        <i class="fas fa-user-friends"></i> ${totals.totalCustomers.toLocaleString()}
+                        <i class="fas fa-user-friends"></i> ${totalCustomers.toLocaleString()}
                     </div>
                     <div class="text-gray-600">Total Customers</div>
                 </div>
