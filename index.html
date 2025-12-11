@@ -821,7 +821,7 @@
                         Choose File
                     </button>
                 </div>
-                <input type="file" id="file-upload" accept=".zip" style="display: none;">
+                <input type="file" id="file-upload" accept=".zip,application/zip,application/x-zip,application/x-zip-compressed" style="display: none;">
                 
                 <!-- Progress Bar -->
                 <div id="loader" class="hidden mt-6">
@@ -978,13 +978,25 @@
                 return;
             }
             
-            if (file.name.endsWith('.zip')) {
+            console.log('File details:', {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+            
+            // More flexible ZIP file validation
+            const isZipFile = file.name.toLowerCase().endsWith('.zip') || 
+                             file.type === 'application/zip' ||
+                             file.type === 'application/x-zip' ||
+                             file.type === 'application/x-zip-compressed';
+            
+            if (isZipFile) {
                 console.log('Processing ZIP file:', file.name);
                 document.getElementById('loader').classList.remove('hidden');
                 showNotification('Processing ZIP file...', 'success');
                 processZipFile(file);
             } else {
-                showNotification('Please upload a valid ZIP file.', 'error');
+                showNotification('Please upload a valid ZIP file. Selected file type: ' + (file.type || 'unknown'), 'error');
                 console.error('Invalid file type:', file.type, file.name);
             }
         }
@@ -1013,19 +1025,26 @@
         }
 
         function processZipFile(file) {
+            console.log('Processing ZIP file:', file.name, 'Size:', file.size);
             const reader = new FileReader();
             reader.onload = function(event) {
+                console.log('FileReader loaded, data length:', event.target.result.byteLength);
                 const zip = new JSZip();
                 zip.loadAsync(event.target.result).then(function(contents) {
+                    console.log('ZIP loaded successfully, files:', Object.keys(contents.files));
                     const csvFiles = [];
                     const totalFiles = Object.keys(contents.files).length;
                     let processedFiles = 0;
 
                     Object.keys(contents.files).forEach(function(filename) {
-                        if (filename.endsWith('aggregate.csv')) {
+                        console.log('Processing file:', filename);
+                        // Accept both aggregate.csv and regular .csv files
+                        if (filename.endsWith('.csv') && !contents.files[filename].dir) {
+                            console.log('Adding CSV file:', filename);
                             csvFiles.push(contents.files[filename].async('string').then(content => {
                                 processedFiles++;
                                 updateProgressBar(processedFiles, totalFiles);
+                                console.log('Processed CSV file:', filename, 'Content length:', content.length);
                                 return content;
                             }));
                         } else {
@@ -1034,14 +1053,35 @@
                         }
                     });
 
+                    console.log('Total CSV files found:', csvFiles.length);
+                    if (csvFiles.length === 0) {
+                        showNotification('No CSV files found in the ZIP archive.', 'error');
+                        document.getElementById('loader').classList.add('hidden');
+                        return;
+                    }
+
                     Promise.all(csvFiles).then(function(csvContents) {
+                        console.log('All CSV files processed, contents:', csvContents.length);
                         consolidatedData = consolidateCSVData(csvContents);
                         originalTableData = [...consolidatedData];
                         displayTable(consolidatedData);
                         showStats(consolidatedData);
                         showNotification('Data processed successfully!', 'success');
+                    }).catch(function(error) {
+                        console.error('Error processing CSV contents:', error);
+                        showNotification('Error processing CSV files: ' + error.message, 'error');
+                        document.getElementById('loader').classList.add('hidden');
                     });
+                }).catch(function(error) {
+                    console.error('Error loading ZIP file:', error);
+                    showNotification('Error loading ZIP file: ' + error.message, 'error');
+                    document.getElementById('loader').classList.add('hidden');
                 });
+            };
+            reader.onerror = function(error) {
+                console.error('FileReader error:', error);
+                showNotification('Error reading file: ' + error.message, 'error');
+                document.getElementById('loader').classList.add('hidden');
             };
             reader.readAsArrayBuffer(file);
         }
