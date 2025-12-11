@@ -1876,7 +1876,7 @@
         function showStats(data) {
             const statsContainer = document.getElementById('stats-overview');
             
-            // Calculate unique teachers and locations
+            // Calculate unique teachers and locations, and sum the totals
             const uniqueTeachers = new Set();
             const uniqueLocations = new Set();
             let totalSessions = 0;
@@ -1887,9 +1887,9 @@
                 uniqueTeachers.add(row.teacherName);
                 uniqueLocations.add(row.location);
                 
-                // Sum individual session counts (not pre-aggregated totals)
-                totalSessions += (row.cycleSessions || 0) + (row.barreSessions || 0);
-                totalCustomers += (row.cycleCustomers || 0) + (row.barreCustomers || 0);
+                // Use the pre-calculated totals (these are already correct sums)
+                totalSessions += row.totalSessions || 0;
+                totalCustomers += row.totalCustomers || 0;
             });
 
             const avgCustomersPerSession = totalSessions > 0 ? 
