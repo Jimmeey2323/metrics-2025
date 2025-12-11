@@ -885,26 +885,99 @@
                     const totalFiles = Object.keys(contents.files).length;
                     let processedFiles = 0;
 
-                    Object.keys(contents.files).forEach(function(filename) {
-                        if (filename.endsWith('aggregate.csv')) {
-                            csvFiles.push(contents.files[filename].async('string').then(content => {
-                                processedFiles++;
-                                updateProgressBar(processedFiles, totalFiles);
-                                return content;
-                            }));
-                        } else {
-                            processedFiles++;
+                    // Strategy 1: Check for combined aggregate file first (new format)
+                    const combinedAggregateFile = Object.keys(contents.files).find(filename => 
+                        filename.includes('aggregate-combined.csv') || 
+                        filename.includes('teachers-payroll-report-aggregate-combined.csv')
+                    );
+
+                    if (combinedAggregateFile) {
+                        // New format: use the combined aggregate file
+                        showNotification('Found combined aggregate file, processing...', 'success');
+                        csvFiles.push(contents.files[combinedAggregateFile].async('string').then(content => {
+                            processedFiles = totalFiles; // Mark all as processed since we only need one file
                             updateProgressBar(processedFiles, totalFiles);
+                            return content;
+                        }));
+                    } else {
+                        // Strategy 2: Look for individual aggregate files
+                        const aggregateFiles = Object.keys(contents.files).filter(filename => 
+                            filename.endsWith('aggregate.csv') || 
+                            (filename.endsWith('.csv') && filename.includes('aggregate'))
+                        );
+
+                        if (aggregateFiles.length > 0) {
+                            showNotification(`Found ${aggregateFiles.length} aggregate files, processing...`, 'success');
+                            aggregateFiles.forEach(function(filename) {
+                                csvFiles.push(contents.files[filename].async('string').then(content => {
+                                    processedFiles++;
+                                    updateProgressBar(processedFiles, totalFiles);
+                                    return content;
+                                }));
+                            });
+                            
+                            // Mark remaining files as processed
+                            processedFiles += totalFiles - aggregateFiles.length;
+                            updateProgressBar(processedFiles, totalFiles);
+                        } else {
+                            // Strategy 3: Fall back to any CSV file that might contain the needed data
+                            const allCsvFiles = Object.keys(contents.files).filter(filename => 
+                                filename.endsWith('.csv') && !filename.includes('combined')
+                            );
+                            
+                            if (allCsvFiles.length > 0) {
+                                showNotification(`No aggregate files found. Trying to process ${allCsvFiles.length} CSV files...`, 'success');
+                                allCsvFiles.forEach(function(filename) {
+                                    csvFiles.push(contents.files[filename].async('string').then(content => {
+                                        processedFiles++;
+                                        updateProgressBar(processedFiles, totalFiles);
+                                        return content;
+                                    }));
+                                });
+                                
+                                // Mark remaining files as processed
+                                processedFiles += totalFiles - allCsvFiles.length;
+                                updateProgressBar(processedFiles, totalFiles);
+                            } else {
+                                showNotification('No valid CSV files found in ZIP archive', 'error');
+                                document.getElementById('loader').classList.add('hidden');
+                                return;
+                            }
                         }
-                    });
+                    }
+
+                    if (csvFiles.length === 0) {
+                        showNotification('No processable files found in ZIP archive', 'error');
+                        document.getElementById('loader').classList.add('hidden');
+                        return;
+                    }
 
                     Promise.all(csvFiles).then(function(csvContents) {
-                        consolidatedData = consolidateCSVData(csvContents);
-                        originalTableData = [...consolidatedData];
-                        displayTable(consolidatedData);
-                        showStats(consolidatedData);
-                        showNotification('Data processed successfully!', 'success');
+                        try {
+                            consolidatedData = consolidateCSVData(csvContents);
+                            if (consolidatedData.length === 0) {
+                                showNotification('No valid data found in CSV files. Please check the file format.', 'error');
+                                document.getElementById('loader').classList.add('hidden');
+                                return;
+                            }
+                            originalTableData = [...consolidatedData];
+                            displayTable(consolidatedData);
+                            showStats(consolidatedData);
+                            showNotification(`Successfully processed ${consolidatedData.length} teacher records!`, 'success');
+                        } catch (error) {
+                            console.error('Error processing CSV data:', error);
+                            showNotification('Error processing CSV data. Please check file format.', 'error');
+                            document.getElementById('loader').classList.add('hidden');
+                        }
+                    }).catch(error => {
+                        console.error('Error reading CSV files:', error);
+                        showNotification('Error reading CSV files from ZIP archive', 'error');
+                        document.getElementById('loader').classList.add('hidden');
                     });
+                }).catch(error => {
+                    console.error('Error processing ZIP file:', error);
+                    showNotification('Invalid ZIP file or corrupted archive', 'error');
+                    document.getElementById('loader').classList.add('hidden');
                 });
             };
             reader.readAsArrayBuffer(file);
@@ -931,11 +1004,30 @@
                 const parsedData = Papa.parse(content, { header: true }).data;
 
                 parsedData.forEach(row => {
-                    const teacherName = `${row['Teacher First Name']} ${row['Teacher Last Name']}`;
+                    // Handle different column name formats
+                    const teacherFirstName = row['Teacher First Name'] || row['Instructor First Name'] || '';
+                    const teacherLastName = row['Teacher Last Name'] || row['Instructor Last Name'] || '';
+                    const teacherName = `${teacherFirstName} ${teacherLastName}`.trim();
+                    
+                    if (!teacherName || teacherName === '') {
+                        return; // Skip rows without teacher names
+                    }
+                    
                     const location = row['Location'];
-                    const sessionName = row['Class name'] || '';
-                    const checkedIn = parseInt(row['Checked in']) || 0;
-                    const monthYear = getMonthYear(row['Class date']);
+                    const sessionName = row['Class name'] || row['Class Name'] || '';
+                    
+                    // Handle different attendance column formats
+                    let checkedIn = 0;
+                    if (row['Checked in']) {
+                        // New format: 'Checked in' contains actual attendees
+                        checkedIn = parseInt(row['Checked in']) || 0;
+                    } else if (row['Participants']) {
+                        // Fallback: use 'Participants' if 'Checked in' is not available
+                        checkedIn = parseInt(row['Participants']) || 0;
+                    }
+                    
+                    const classDate = row['Class date'] || row['Class Date'] || '';
+                    const monthYear = getMonthYear(classDate);
 
                     if (!teacherData[location]) teacherData[location] = {};
                     if (!teacherData[location][monthYear]) teacherData[location][monthYear] = {};
