@@ -14,20 +14,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root {
-            --primary-color: #1a237e;
-            --secondary-color: #283593;
-            --accent-color: #3f51b5;
-            --success-color: #00695c;
-            --warning-color: #ff6f00;
-            --error-color: #d32f2f;
-            --background-color: #ffffff;
+            --primary-color: #1e293b;
+            --secondary-color: #475569;
+            --accent-color: #3b82f6;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --error-color: #dc2626;
+            --background-color: #f8fafc;
             --surface-color: #ffffff;
-            --text-primary: #000000;
-            --text-secondary: #000000;
-            --border-color: #000000;
-            --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12);
-            --shadow-lg: 0 8px 16px -3px rgba(0, 0, 0, 0.25), 0 4px 8px -2px rgba(0, 0, 0, 0.15);
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
         }
 
         * {
@@ -35,19 +41,28 @@
         }
 
         body {
-            font-family: 'Play', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #f1f5f9 75%, #e8eaf6 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
             min-height: 100vh;
             margin: 0;
-            padding: 0;
+            padding: 1.5rem;
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .glass-morphism {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
-            border-radius: 16px;
-            border: 2px solid #000000;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            background: var(--surface-color);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .glass-morphism:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-hover);
         }
 
         .fade-in {
@@ -69,32 +84,26 @@
         }
 
         .drag-drop-area {
-            border: 3px dashed #000000;
-            padding: 80px 40px;
+            border: 2px dashed var(--border-color);
+            padding: 3rem 2rem;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 2rem;
             cursor: pointer;
-            background: #ffffff;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            background: var(--surface-color);
+            transition: all 0.2s ease;
+            border-radius: var(--radius-lg);
             position: relative;
-            overflow: hidden;
         }
 
-        .drag-drop-area::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(26, 35, 126, 0.15), transparent);
-            transition: left 0.6s;
+        .drag-drop-area:hover {
+            border-color: var(--accent-color);
+            background: rgba(59, 130, 246, 0.02);
         }
 
-        .drag-drop-area:hover::before {
-            left: 100%;
+        .drag-drop-area.dragover {
+            border-color: var(--accent-color);
+            background: rgba(59, 130, 246, 0.05);
+            transform: scale(1.01);
         }
 
         .drag-drop-area:hover {
@@ -109,43 +118,43 @@
         }
 
         .btn-premium {
-            font-family: 'Play', 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a237e 0%, #283593 25%, #3f51b5 50%, #5e35b1 75%, #673ab7 100%);
+            background: var(--accent-color);
             color: white;
-            padding: 12px 24px;
-            border: 2px solid #000000;
-            border-radius: 10px;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 0.875rem;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 16px rgba(26, 35, 126, 0.3);
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: var(--shadow-xs);
+            font-family: inherit;
         }
 
         .btn-premium::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.6s;
+            display: none;
         }
 
         .btn-premium:hover::after {
-            left: 100%;
+            display: none;
         }
 
         .btn-premium:hover {
-            transform: translateY(-2px);
+            background: #2563eb;
+            transform: translateY(-1px);
             box-shadow: var(--shadow-md);
         }
 
         .btn-premium:active {
             transform: translateY(0);
+        }
+
+        .btn-premium.btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8125rem;
         }
 
         .stats-grid {
@@ -157,77 +166,71 @@
 
         .stat-card {
             background: var(--surface-color);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
             text-align: center;
-            transition: all 0.3s ease;
-            border: 2px solid #000000;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 24px rgba(26, 35, 126, 0.2);
-            background: linear-gradient(135deg, #f8f9ff 0%, #f3e5f5 100%);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-hover);
         }
 
-        /* FIXED TABLE STYLES - COMPLETE ALIGNMENT SOLUTION */
-.data-table {
-    width: 100%;
-    min-width: 1300px;
-    border-collapse: collapse;
-    background: var(--surface-color);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    margin-bottom: 20px;
-    padding: 20px 30px;
-    border: 2px solid #000000;
-    table-layout: fixed; /* Crucial for perfect alignment */
-}
+        /* Premium Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--surface-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            table-layout: auto;
+        }
 
-.data-table thead tr {
-    background: linear-gradient(135deg, #1a237e 0%, #283593 25%, #3f51b5 50%, #283593 75%, #1a237e 100%);
-}
+        .data-table thead tr {
+            background: var(--background-color);
+        }
 
-.data-table th {
-    font-family: 'Play', 'Inter', sans-serif;
-    color: white !important;
-    padding: 10px 4px; /* Reduced, consistent padding */
-    text-align: center;
-    font-weight: 600;
-    font-size: 10px; /* Smaller font for headers */
-    position: relative;
-    cursor: pointer;
-    user-select: none;
-    border: none;
-    background: transparent;
-    height: 35px;
-    line-height: 1.1;
-    white-space: normal; /* Allow wrapping */
-    overflow: visible;
-    text-overflow: clip;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    vertical-align: middle;
-    word-wrap: break-word;
-}
+        .data-table th {
+            color: var(--text-primary);
+            background: var(--background-color);
+            padding: 1rem 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
+            height: auto;
+            line-height: 1.4;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
 
-.data-table td {
-    font-family: 'Play', 'Inter', sans-serif;
-    padding: 8px 4px; /* Match header padding */
-    border-bottom: 1px solid #000000;
-    font-size: 11px;
-    transition: all 0.2s ease;
-    height: 35px;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-align: center;
-    vertical-align: middle;
-    color: #000000;
-    font-weight: 500;
-}
+        .data-table td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.1s ease;
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+            vertical-align: middle;
+            color: var(--text-primary);
+            background: var(--surface-color);
+        }
 
 /* PRECISE COLUMN WIDTH DEFINITIONS - MATCHING HEADERS AND DATA */
 .data-table th:nth-child(1),
@@ -299,20 +302,17 @@
     max-width: 85px;
 }
 
-/* Header-specific fixes */
+/* Header icons */
 .data-table th i {
-    color: white !important;
-    margin-right: 3px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    font-size: 9px;
+    color: var(--text-primary);
+    margin-right: 0.25rem;
+    font-size: 0.75rem;
 }
 
-/* Ensure all numeric columns are right-aligned for better readability */
+/* Column alignment and styling */
 .data-table td:nth-child(n+4):nth-child(-n+15) {
     text-align: center;
-    padding-right: 8px;
-    font-family: 'Play';
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .data-table th:nth-child(n+4):nth-child(-n+15) {
@@ -323,31 +323,48 @@
 .data-table td:nth-child(16),
 .data-table td:nth-child(17) {
     text-align: center;
-    font-family: 'Play';
-    font-weight: 600;
+    font-weight: 500;
 }
 
-/* Remove any conflicting background colors that might affect alignment */
-.data-table td:first-child {
-    background: rgba(26, 35, 126, 0.05) !important;
+/* Teacher name column left aligned */
+.data-table td:first-child,
+.data-table th:first-child {
+    text-align: left;
+    padding-left: 1rem;
 }
 
-/* Compact header text for better fit */
-.data-table th {
-    font-size: 9px;
-    line-height: 1.5;
-    padding: 8px 3px;
-}
 
-/* Wrap header text while preserving fixed column widths */
-.data-table thead th {
-    white-space: normal;           /* allow wrapping */
-    overflow-wrap: anywhere;       /* break long words if needed */
-    word-break: break-word;        /* ensure breaks in long tokens */
-    hyphens: auto;                 /* add hyphenation where supported */
-    height: auto;                  /* remove fixed height constraint */
-    min-height: 35px;              /* keep a comfortable minimum */
-}
+
+        /* Premium header text wrapping */
+        .data-table thead th {
+            white-space: normal;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            hyphens: auto;
+            height: auto;
+            min-height: 48px;
+            vertical-align: middle;
+        }
+
+        /* Sort indicators */
+        .data-table th.sort-asc::after {
+            content: ' ↑';
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .data-table th.sort-desc::after {
+            content: ' ↓';
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        /* Table container with scroll */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+        }
 
         .btn-sm {
             padding: 8px 16px;
@@ -368,15 +385,15 @@
         }
 
         .tab-button {
-            padding: 15px 25px;
+            padding: 1rem 1.5rem;
             background: transparent;
             border: none;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            color: #000000;
-            transition: all 0.3s ease;
-            border-right: 1px solid #e2e8f0;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            border-right: 1px solid var(--border-color);
             white-space: nowrap;
             position: relative;
         }
@@ -386,12 +403,13 @@
         }
 
         .tab-button.active {
-            background: linear-gradient(135deg, #1a237e 0%, #3f51b5 100%);
+            background: var(--accent-color);
             color: white;
         }
 
         .tab-button:not(.active):hover {
-            background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
+            background: var(--background-color);
+            color: var(--text-primary);
         }
 
         .tab-content {
@@ -557,19 +575,22 @@
         }
 
         .search-box {
-            padding: 10px 16px;
-            border: 2px solid #000000;
-            border-radius: 10px;
-            font-size: 14px;
-            transition: all 0.3s ease;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
             min-width: 250px;
-            color: #000000;
-            font-weight: 500;
+            color: var(--text-primary);
+            font-weight: 400;
+            background: var(--surface-color);
         }
 
         .search-box:focus {
             outline: none;
-            border-color: #1a237e;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
             box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
         }
 
@@ -621,11 +642,11 @@
         }
 
         .footer {
-            margin-top: 40px;
+            margin-top: 2.5rem;
             text-align: center;
-            font-size: 14px;
-            color: #64748b;
-            padding: 20px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            padding: 1.5rem;
         }
 
         @media (max-width: 768px) {
@@ -652,26 +673,33 @@
             }
         }
 
-        /* Totals and Grand Totals Rows Animated Borders */
+        /* Premium Totals Row Styling */
         .data-table tbody tr.totals-row,
         .data-table tbody tr.grand-totals-row {
-            background: #f5f5f5 !important;
-            font-weight: bold;
+            background: var(--background-color) !important;
+            font-weight: 600;
             position: relative;
+            border-top: 2px solid var(--border-color);
         }
 
-        .data-table tbody tr.totals-row::after,
-        .data-table tbody tr.grand-totals-row::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 2px solid transparent;
-            border-radius: 0;
-            animation: borderSlide 3s linear infinite;
-            pointer-events: none;
+        .data-table tbody tr.totals-row td,
+        .data-table tbody tr.grand-totals-row td {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .data-table tbody tr.grand-totals-row {
+            border-top: 2px solid var(--accent-color);
+        }
+
+        .data-table tbody tr.grand-totals-row td {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        /* Row hover effects */
+        .data-table tbody tr:not(.totals-row):not(.grand-totals-row):hover {
+            background: rgba(59, 130, 246, 0.02);
         }
 
         @keyframes borderSlide {
@@ -679,21 +707,82 @@
             50% { border-color: #ccc; }
             100% { border-color: #888; }
         }
+
+        /* Form Elements */
+        .search-box, input[type="text"], input[type="file"] {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            background: var(--surface-color);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .search-box:focus, input[type="text"]:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-box::placeholder, input::placeholder {
+            color: var(--text-muted);
+        }
+
+        select {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--surface-color);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Secondary Button Style */
+        .btn-secondary {
+            background: var(--surface-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background: var(--background-color);
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
     </style>
 </head>
 <body>
 
     
-    <div class="min-h-screen py-8 px-4">
+    <div class="min-h-screen">
         <div class="max-w-7xl mx-auto">
             <!-- Header -->
-            <div class="text-center mb-8 fade-in">
-                <h1 class="text-5xl font-bold text-gray-800 mb-2" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">Physique 57 Analytics</h1>
-                <p class="text-xl text-gray-600">Advanced Data Processing Dashboard</p>
+            <div class="text-center mb-6 fade-in">
+                <h1 class="text-3xl font-semibold mb-1" style="color: var(--text-primary); font-weight: 600;">Physique 57 Analytics</h1>
+                <p class="text-lg" style="color: var(--text-secondary);">Advanced Data Processing Dashboard</p>
             </div>
 
             <!-- Upload Section -->
-            <div class="glass-morphism p-8 mb-8 fade-in" id="upload-section">
+            <div class="glass-morphism p-6 mb-6 fade-in" id="upload-section">
                 <div class="drag-drop-area" id="drag-drop-area">
                     <div class="mb-4">
                         <i class="fas fa-cloud-upload-alt text-6xl text-blue-500 mb-4"></i>
@@ -917,25 +1006,83 @@
         }
 
         function getMonthYear(dateString) {
-            const date = new Date(dateString);
+            if (!dateString) return 'Unknown';
+            
+            // Handle different date formats
+            let date;
+            if (dateString.includes(',')) {
+                // Format like "2025-12-18, 9:30 AM" - extract date part
+                const datePart = dateString.split(',')[0].trim();
+                date = new Date(datePart);
+            } else {
+                date = new Date(dateString);
+            }
+            
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                console.warn('Invalid date:', dateString);
+                return 'Unknown';
+            }
+            
             const month = date.toLocaleString('default', { month: 'short' });
             const year = date.getFullYear().toString().slice(-2);
             return `${month}-${year}`;
         }
 
+        function detectCSVFormat(headers) {
+            const hasTeacherNames = headers.includes('Teacher First Name') && headers.includes('Teacher Last Name');
+            const hasInstructorNames = headers.includes('Instructor First Name') && headers.includes('Instructor Last Name');
+            const hasClassName = headers.includes('Class name');
+            const hasClassNameCap = headers.includes('Class Name');
+            const hasClassDate = headers.includes('Class date');
+            const hasClassDateCap = headers.includes('Class Date');
+            
+            if (hasTeacherNames && hasClassName && hasClassDate) {
+                return 'Original Format';
+            } else if (hasInstructorNames && (hasClassNameCap || hasClassName) && (hasClassDateCap || hasClassDate)) {
+                return 'Momence Format';
+            } else {
+                return 'Unknown Format';
+            }
+        }
+
         function consolidateCSVData(csvContents) {
             const consolidatedData = [];
             const teacherData = {};
+            let detectedFormats = new Set();
 
-            csvContents.forEach(content => {
-                const parsedData = Papa.parse(content, { header: true }).data;
+            csvContents.forEach((content, index) => {
+                const parsedData = Papa.parse(content, { header: true });
+                if (parsedData.errors.length > 0) {
+                    console.warn(`CSV parsing errors in file ${index + 1}:`, parsedData.errors);
+                }
+                
+                const data = parsedData.data;
+                if (data.length === 0) return;
+                
+                // Detect format for this CSV
+                const headers = Object.keys(data[0]);
+                const format = detectCSVFormat(headers);
+                detectedFormats.add(format);
+                
+                console.log(`Processing file ${index + 1}: ${format} detected`);
 
-                parsedData.forEach(row => {
-                    const teacherName = `${row['Teacher First Name']} ${row['Teacher Last Name']}`;
-                    const location = row['Location'];
-                    const sessionName = row['Class name'] || '';
+                data.forEach(row => {
+                    // Handle both CSV formats - original and Momence
+                    const teacherFirstName = row['Teacher First Name'] || row['Instructor First Name'] || '';
+                    const teacherLastName = row['Teacher Last Name'] || row['Instructor Last Name'] || '';
+                    const teacherName = `${teacherFirstName} ${teacherLastName}`.trim();
+                    
+                    const location = row['Location'] || '';
+                    const sessionName = row['Class name'] || row['Class Name'] || '';
                     const checkedIn = parseInt(row['Checked in']) || 0;
-                    const monthYear = getMonthYear(row['Class date']);
+                    const classDate = row['Class date'] || row['Class Date'] || '';
+                    const monthYear = getMonthYear(classDate);
+                    
+                    // Skip rows with missing essential data
+                    if (!teacherName || !location || !classDate) {
+                        return;
+                    }
 
                     if (!teacherData[location]) teacherData[location] = {};
                     if (!teacherData[location][monthYear]) teacherData[location][monthYear] = {};
@@ -1012,6 +1159,13 @@
                         });
                     }
                 }
+            }
+
+            // Provide feedback about detected formats
+            if (detectedFormats.size > 0) {
+                const formatList = Array.from(detectedFormats).join(', ');
+                console.log('Detected CSV formats:', formatList);
+                showNotification(`Successfully processed ${csvContents.length} files. Formats: ${formatList}`, 'success');
             }
 
             return consolidatedData;
