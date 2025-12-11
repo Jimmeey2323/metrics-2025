@@ -100,14 +100,12 @@
             background: rgba(59, 130, 246, 0.02);
         }
 
-        .drag-drop-area.dragover {
+        .drag-drop-area.dragover,
+        .drag-drop-area.drag-over {
             border-color: var(--accent-color);
             background: rgba(59, 130, 246, 0.05);
             transform: scale(1.01);
         }
-
-        .drag-drop-area:hover {
-            border-color: #1a237e;
             transform: translateY(-3px);
             box-shadow: 0 12px 32px rgba(26, 35, 126, 0.25);
         }
@@ -124,7 +122,7 @@
             padding: 0.75rem 1.5rem;
             border-radius: var(--radius-md);
             font-weight: 500;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: inline-flex;
@@ -183,6 +181,7 @@
         /* Premium Table Styles */
         .data-table {
             width: 100%;
+            min-width: max-content;
             border-collapse: separate;
             border-spacing: 0;
             background: var(--surface-color);
@@ -201,149 +200,171 @@
         .data-table th {
             color: var(--text-primary);
             background: var(--background-color);
-            padding: 1rem 0.75rem;
+            padding: 0.5rem 0.75rem;
             text-align: center;
             font-weight: 600;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             position: relative;
             cursor: pointer;
             user-select: none;
             border: 1px solid var(--border-color);
             border-bottom: 2px solid var(--border-color);
-            height: auto;
-            line-height: 1.4;
+            height: 35px;
+            max-height: 35px;
+            line-height: 1.2;
             white-space: nowrap;
             vertical-align: middle;
+            overflow: hidden;
         }
 
         .data-table td {
-            padding: 1rem 0.75rem;
+            padding: 0.5rem 0.75rem;
             border-bottom: 1px solid var(--border-color);
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 500;
             transition: all 0.1s ease;
-            line-height: 1.4;
+            line-height: 1.2;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
             text-align: center;
             vertical-align: middle;
             color: var(--text-primary);
             background: var(--surface-color);
+            height: 35px;
+            max-height: 35px;
+            overflow: hidden;
         }
 
-/* PRECISE COLUMN WIDTH DEFINITIONS - MATCHING HEADERS AND DATA */
-.data-table th:nth-child(1),
-.data-table td:nth-child(1) {
-    width: 160px; /* Teacher name */
-    min-width: 160px;
-    max-width: 160px;
-    text-align: left;
-    padding-left: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+        /* Flexible Column Styling */
+        .data-table th:nth-child(1),
+        .data-table td:nth-child(1) {
+            min-width: 160px;
+            text-align: left;
+            padding-left: 1rem;
+        }
 
-.data-table th:nth-child(2),
-.data-table td:nth-child(2) {
-    width: 180px; /* Location - wider for long names */
-    min-width: 180px;
-    max-width: 180px;
-    text-align: left;
-    padding-left: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+        .data-table th:nth-child(2),
+        .data-table td:nth-child(2) {
+            min-width: 120px;
+            text-align: left;
+            padding-left: 1rem;
+        }
 
-.data-table th:nth-child(3),
-.data-table td:nth-child(3) {
-    width: 70px; /* Period */
-    min-width: 70px;
-    max-width: 70px;
-}
+        .data-table th:nth-child(3),
+        .data-table td:nth-child(3) {
+            min-width: 80px;
+        }
 
-/* Numeric columns - compact widths for numbers */
-.data-table th:nth-child(4),  /* Cycle */
-.data-table td:nth-child(4),
-.data-table th:nth-child(5),  /* Empty Cycle */
-.data-table td:nth-child(5),
-.data-table th:nth-child(6),  /* Full Cycle */
-.data-table td:nth-child(6),
-.data-table th:nth-child(7),  /* Cycle Customers */
-.data-table td:nth-child(7),
-.data-table th:nth-child(8),  /* Barre */
-.data-table td:nth-child(8),
-.data-table th:nth-child(9),  /* Empty Barre */
-.data-table td:nth-child(9),
-.data-table th:nth-child(10), /* Full Barre */
-.data-table td:nth-child(10),
-.data-table th:nth-child(11), /* Barre Customers */
-.data-table td:nth-child(11),
-.data-table th:nth-child(12), /* Total Sessions */
-.data-table td:nth-child(12),
-.data-table th:nth-child(13), /* Empty Total */
-.data-table td:nth-child(13),
-.data-table th:nth-child(14), /* Full Total */
-.data-table td:nth-child(14),
-.data-table th:nth-child(15), /* All Customers */
-.data-table td:nth-child(15) {
-    width: 65px;
-    min-width: 65px;
-    max-width: 65px;
-}
+        /* Numeric columns with flexible widths */
+        .data-table th:nth-child(n+4):nth-child(-n+15),
+        .data-table td:nth-child(n+4):nth-child(-n+15) {
+            min-width: 80px;
+            text-align: center;
+        }
 
-.data-table th:nth-child(16), /* Avg (Ex. Empty) */
-.data-table td:nth-child(16),
-.data-table th:nth-child(17) { /* Avg (Inc. Empty) */
-    width: 85px;
-    min-width: 85px;
-    max-width: 85px;
-}
+        .data-table th:nth-child(16),
+        .data-table td:nth-child(16),
+        .data-table th:nth-child(17),
+        .data-table td:nth-child(17) {
+            min-width: 100px;
+            text-align: center;
+        }
 
-/* Header icons */
-.data-table th i {
-    color: var(--text-primary);
-    margin-right: 0.25rem;
-    font-size: 0.75rem;
-}
+        /* Header icons */
+        .data-table th i {
+            color: var(--text-primary);
+            margin-right: 0.25rem;
+            font-size: 0.625rem;
+        }
 
-/* Column alignment and styling */
-.data-table td:nth-child(n+4):nth-child(-n+15) {
-    text-align: center;
-    font-weight: 500;
-}
+        /* Modal for drill-down details */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
 
-.data-table th:nth-child(n+4):nth-child(-n+15) {
-    text-align: center;
-}
+        .modal-content {
+            background: var(--surface-color);
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 1200px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
 
-/* Average columns center aligned */
-.data-table td:nth-child(16),
-.data-table td:nth-child(17) {
-    text-align: center;
-    font-weight: 500;
-}
+        .modal-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
 
-/* Teacher name column left aligned */
-.data-table td:first-child,
-.data-table th:first-child {
-    text-align: left;
-    padding-left: 1rem;
-}
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+
+        .close-modal:hover {
+            background: var(--background-color);
+            color: var(--text-primary);
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .detail-table th,
+        .detail-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.75rem;
+        }
+
+        .detail-table th {
+            background: var(--background-color);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
 
 
 
-        /* Premium header text wrapping */
+        /* Header styling - no wrapping */
         .data-table thead th {
-            white-space: normal;
-            overflow-wrap: break-word;
-            word-break: break-word;
-            hyphens: auto;
-            height: auto;
-            min-height: 48px;
+            white-space: nowrap;
+            height: 35px;
+            max-height: 35px;
+            min-height: 35px;
             vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Sort indicators */
@@ -578,7 +599,7 @@
             padding: 0.75rem 1rem;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             transition: all 0.2s ease;
             min-width: 250px;
             color: var(--text-primary);
@@ -644,7 +665,7 @@
         .footer {
             margin-top: 2.5rem;
             text-align: center;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             padding: 1.5rem;
         }
@@ -697,9 +718,15 @@
             font-weight: 700;
         }
 
-        /* Row hover effects */
+        /* Row hover effects and clickable styling */
         .data-table tbody tr:not(.totals-row):not(.grand-totals-row):hover {
             background: rgba(59, 130, 246, 0.02);
+            cursor: pointer;
+            transform: scale(1.001);
+        }
+
+        .data-table tbody tr:not(.totals-row):not(.grand-totals-row) {
+            transition: all 0.2s ease;
         }
 
         @keyframes borderSlide {
@@ -713,7 +740,7 @@
             padding: 0.75rem 1rem;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             background: var(--surface-color);
             color: var(--text-primary);
             transition: all 0.2s ease;
@@ -735,7 +762,7 @@
             border-radius: var(--radius-md);
             background: var(--surface-color);
             color: var(--text-primary);
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
             outline: none;
@@ -754,7 +781,7 @@
             padding: 0.75rem 1.5rem;
             border-radius: var(--radius-md);
             font-weight: 500;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: inline-flex;
@@ -794,7 +821,7 @@
                         Choose File
                     </button>
                 </div>
-                <input type="file" id="file-upload" accept=".zip" class="hidden">
+                <input type="file" id="file-upload" accept=".zip" style="display: none;">
                 
                 <!-- Progress Bar -->
                 <div id="loader" class="hidden mt-6">
@@ -902,43 +929,63 @@
         let originalTableData = [];
 
         // Event Listeners
-        document.getElementById('drag-drop-area').addEventListener('click', () => {
-            document.getElementById('file-upload').click();
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const dragDropArea = document.getElementById('drag-drop-area');
+            const fileUpload = document.getElementById('file-upload');
+            
+            if (dragDropArea && fileUpload) {
+                dragDropArea.addEventListener('click', () => {
+                    console.log('Drag drop area clicked');
+                    fileUpload.click();
+                });
 
-        document.getElementById('file-upload').addEventListener('change', handleFileUpload);
-        
-        document.getElementById('drag-drop-area').addEventListener('dragover', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            event.dataTransfer.dropEffect = 'copy';
-            event.currentTarget.classList.add('drag-over');
-        });
+                fileUpload.addEventListener('change', handleFileUpload);
+                
+                dragDropArea.addEventListener('dragover', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.dataTransfer.dropEffect = 'copy';
+                    event.currentTarget.classList.add('drag-over');
+                });
 
-        document.getElementById('drag-drop-area').addEventListener('dragleave', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            event.currentTarget.classList.remove('drag-over');
-        });
+                dragDropArea.addEventListener('dragleave', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.currentTarget.classList.remove('drag-over');
+                });
 
-        document.getElementById('drag-drop-area').addEventListener('drop', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            event.currentTarget.classList.remove('drag-over');
-            const files = event.dataTransfer.files;
-            if (files.length > 0) {
-                handleFileUpload({ target: { files } });
+                dragDropArea.addEventListener('drop', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.currentTarget.classList.remove('drag-over');
+                    const files = event.dataTransfer.files;
+                    if (files.length > 0) {
+                        handleFileUpload({ target: { files } });
+                    }
+                });
+            } else {
+                console.error('Drag drop area or file upload element not found');
             }
         });
 
         function handleFileUpload(event) {
+            console.log('File upload triggered', event);
             const file = event.target.files[0];
-            if (file && file.name.endsWith('.zip')) {
+            console.log('Selected file:', file);
+            
+            if (!file) {
+                showNotification('No file selected.', 'error');
+                return;
+            }
+            
+            if (file.name.endsWith('.zip')) {
+                console.log('Processing ZIP file:', file.name);
                 document.getElementById('loader').classList.remove('hidden');
                 showNotification('Processing ZIP file...', 'success');
                 processZipFile(file);
             } else {
                 showNotification('Please upload a valid ZIP file.', 'error');
+                console.error('Invalid file type:', file.type, file.name);
             }
         }
 
@@ -1323,6 +1370,13 @@
                     tr.className = `data-row slide-in collapsible-content ${isUnderperforming ? 'underperforming' : ''} ${collapsedSections.has(sectionId) ? 'collapsed' : ''}`;
                     tr.dataset.section = sectionId;
                     
+                    // Add click handler for drill-down
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = function(e) {
+                        e.preventDefault();
+                        showTeacherDetails(row.teacherName, row.location, row.period);
+                    };
+                    
                     const headers = getTableHeaders();
                     headers.forEach((header, cellIndex) => {
                         const td = document.createElement('td');
@@ -1447,6 +1501,13 @@
                         
                         tr.className = `data-row slide-in collapsible-content ${isUnderperforming ? 'underperforming' : ''} ${collapsedSections.has(monthId) ? 'collapsed' : ''}`;
                         tr.dataset.section = monthId;
+                        
+                        // Add click handler for drill-down
+                        tr.style.cursor = 'pointer';
+                        tr.onclick = function(e) {
+                            e.preventDefault();
+                            showTeacherDetails(row.teacherName, row.location, row.period);
+                        };
                         
                         const headers = getTableHeaders();
                         headers.forEach((header, cellIndex) => {
@@ -2254,6 +2315,105 @@
             }
         }
 
+        // Drill-down functionality
+        function showTeacherDetails(teacherName, location, period) {
+            const modal = document.getElementById('drill-down-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            
+            modalTitle.textContent = `${teacherName} - ${location} (${period})`;
+            
+            // Find the teacher's individual class data
+            const teacherClasses = findTeacherClasses(teacherName, location, period);
+            
+            if (teacherClasses.length === 0) {
+                modalBody.innerHTML = '<p>No individual class data available for this teacher.</p>';
+            } else {
+                modalBody.innerHTML = createTeacherDetailsHTML(teacherClasses);
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeDrillDownModal() {
+            const modal = document.getElementById('drill-down-modal');
+            modal.style.display = 'none';
+        }
+
+        function findTeacherClasses(teacherName, location, period) {
+            // This would search through the original CSV data for individual classes
+            // For now, return mock data - you'll need to store the original class data
+            return [
+                {
+                    date: '2025-12-01',
+                    className: 'PowerCycle 45',
+                    time: '9:00 AM',
+                    checkedIn: 12,
+                    capacity: 20
+                },
+                {
+                    date: '2025-12-03',
+                    className: 'Barre Sculpt',
+                    time: '6:00 PM', 
+                    checkedIn: 8,
+                    capacity: 15
+                },
+                {
+                    date: '2025-12-05',
+                    className: 'PowerCycle 45',
+                    time: '9:00 AM',
+                    checkedIn: 0,
+                    capacity: 20
+                }
+            ];
+        }
+
+        function createTeacherDetailsHTML(classes) {
+            let html = `
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Class Name</th>
+                            <th>Time</th>
+                            <th>Checked In</th>
+                            <th>Capacity</th>
+                            <th>Fill Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            classes.forEach(cls => {
+                const fillRate = cls.capacity > 0 ? ((cls.checkedIn / cls.capacity) * 100).toFixed(1) : '0.0';
+                html += `
+                    <tr>
+                        <td>${cls.date}</td>
+                        <td>${cls.className}</td>
+                        <td>${cls.time}</td>
+                        <td>${cls.checkedIn}</td>
+                        <td>${cls.capacity}</td>
+                        <td>${fillRate}%</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            return html;
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('drill-down-modal');
+            if (event.target === modal) {
+                closeDrillDownModal();
+            }
+        }
+
         function downloadImage() {
             try {
                 const tableContainer = document.getElementById('table-container');
@@ -2292,6 +2452,19 @@
                 showNotification('Error downloading image file', 'error');
             }
         }
+
+        <!-- Drill-down Modal -->
+        <div id="drill-down-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="modal-title">Teacher Details</h2>
+                    <button class="close-modal" onclick="closeDrillDownModal()">&times;</button>
+                </div>
+                <div id="modal-body">
+                    <!-- Teacher details will be populated here -->
+                </div>
+            </div>
+        </div>
 
     </script>
 </body>
