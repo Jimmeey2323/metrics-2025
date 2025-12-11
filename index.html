@@ -933,7 +933,7 @@
                 parsedData.forEach(row => {
                     const teacherName = `${row['Teacher First Name']} ${row['Teacher Last Name']}`;
                     const location = row['Location'];
-                    const sessionName = row['Class name'];
+                    const sessionName = row['Class name'] || '';
                     const checkedIn = parseInt(row['Checked in']) || 0;
                     const monthYear = getMonthYear(row['Class date']);
 
@@ -960,7 +960,7 @@
 
                     const teacher = teacherData[location][monthYear][teacherName];
 
-                    if (sessionName.toLowerCase().includes('powercycle')) {
+                    if (sessionName && sessionName.toLowerCase().includes('powercycle')) {
                         teacher.cycleSessions++;
                         if (checkedIn === 0) {
                             teacher.emptyCycleSessions++;
@@ -968,7 +968,7 @@
                             teacher.nonEmptyCycleSessions++;
                             teacher.cycleCustomers += checkedIn;
                         }
-                    } else if (!sessionName.toLowerCase().includes('powercycle')) {
+                    } else if (sessionName && !sessionName.toLowerCase().includes('powercycle')) {
                         teacher.barreSessions++;
                         if (checkedIn === 0) {
                             teacher.emptyBarreSessions++;
@@ -1680,7 +1680,17 @@
         // Table sorting functionality
         function sortTable(columnKey, columnIndex) {
             const table = document.getElementById('main-data-table');
+            if (!table) {
+                console.error('Table not found for sorting');
+                return;
+            }
+            
             const tbody = table.querySelector('tbody');
+            if (!tbody) {
+                console.error('Table body not found for sorting');
+                return;
+            }
+            
             const rows = Array.from(tbody.querySelectorAll('tr.data-row'));
             
             // Update sort direction
@@ -1697,7 +1707,9 @@
             });
             
             const currentHeader = table.querySelector(`th[data-column="${columnKey}"]`);
-            currentHeader.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            if (currentHeader) {
+                currentHeader.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
             
             // Sort rows
             rows.sort((a, b) => {
@@ -1804,10 +1816,18 @@
         }
 
         function clearFilters() {
-            document.getElementById('search-input').value = '';
-            const table = document.getElementById('main-data-table');
-            const rows = table.querySelectorAll('tbody tr');
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = '';
+            }
             
+            const table = document.getElementById('main-data-table');
+            if (!table) {
+                showNotification('No data table found', 'error');
+                return;
+            }
+            
+            const rows = table.querySelectorAll('tbody tr');
             rows.forEach(row => {
                 row.style.display = '';
             });
@@ -1815,10 +1835,50 @@
             showNotification('Filters cleared', 'success');
         }
 
+        // Search/filter functionality
+        function filterTable() {
+            const searchInput = document.getElementById('search-input');
+            const table = document.getElementById('main-data-table');
+            
+            if (!searchInput || !table) {
+                console.error('Search input or table not found');
+                return;
+            }
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const tbody = table.querySelector('tbody');
+            
+            if (!tbody) {
+                console.error('Table body not found');
+                return;
+            }
+            
+            const rows = tbody.querySelectorAll('tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const shouldShow = text.includes(searchTerm);
+                row.style.display = shouldShow ? '' : 'none';
+                if (shouldShow && !row.classList.contains('totals-row') && !row.classList.contains('grand-totals-row')) {
+                    visibleCount++;
+                }
+            });
+            
+            if (searchTerm && visibleCount === 0) {
+                showNotification('No results found', 'error');
+            }
+        }
+
         // Copy to clipboard functionality
         async function copyToClipboard() {
             try {
                 const tables = document.querySelectorAll('.data-table');
+                if (tables.length === 0) {
+                    showNotification('No data available to copy', 'error');
+                    return;
+                }
+                
                 let textContent = '';
                 
                 tables.forEach(table => {
@@ -1833,9 +1893,15 @@
                     });
                 });
                 
+                if (textContent.trim() === '') {
+                    showNotification('No visible data to copy', 'error');
+                    return;
+                }
+                
                 await navigator.clipboard.writeText(textContent);
                 showNotification('Table data copied to clipboard!', 'success');
             } catch (err) {
+                console.error('Copy to clipboard error:', err);
                 showNotification('Failed to copy to clipboard', 'error');
             }
         }
@@ -1935,6 +2001,8 @@
                     if (tableIndex > 0) csvContent += '\n\n'; // Separate tables
                     
                     const rows = table.querySelectorAll('tr');
+                    if (rows.length === 0) return;
+                    
                     rows.forEach((row, index) => {
                         if (row.style.display !== 'none' && !row.classList.contains('collapsed')) {
                             const cols = Array.from(row.querySelectorAll('td, th'));
@@ -1950,6 +2018,11 @@
                         }
                     });
                 });
+
+                if (csvContent.trim() === '') {
+                    showNotification('No visible data to export', 'error');
+                    return;
+                }
 
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
